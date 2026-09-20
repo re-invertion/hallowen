@@ -24,6 +24,7 @@ export type FlickerController = {
   update(dt: number): void;
   setAgitated(active: boolean): void;
   forceOutage(seconds: number): void;
+  setMasterLevel(value: number): void;
   reset(): void;
   dispose(): void;
 };
@@ -41,6 +42,7 @@ export function createFlickerLight(
   let target = 1;
   let forcedOutage = 0;
   let agitated = false;
+  let masterLevel = 1;
 
   const random = (min: number, max: number) => min + Math.random() * (max - min);
 
@@ -57,7 +59,8 @@ export function createFlickerLight(
   }
 
   function apply(value: number) {
-    const safe = Math.max(0, Math.min(1.08, value));
+    const local = Math.max(0, Math.min(1.08, value));
+    const safe = local * Math.max(0, Math.min(1, masterLevel));
     if (light) light.intensity = baseIntensity * safe;
     fixture.emissiveColor.copyFrom(baseEmissive.scale(safe));
   }
@@ -68,6 +71,7 @@ export function createFlickerLight(
     target = 1;
     forcedOutage = 0;
     agitated = false;
+    masterLevel = 1;
     apply(1);
   }
 
@@ -100,6 +104,10 @@ export function createFlickerLight(
     },
     forceOutage(seconds: number) {
       forcedOutage = Math.max(forcedOutage, Math.max(.2, Math.min(1.5, seconds)));
+    },
+    setMasterLevel(value: number) {
+      masterLevel = Math.max(0, Math.min(1, value));
+      apply(level);
     },
     reset,
     dispose() {
