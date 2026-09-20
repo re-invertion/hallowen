@@ -13,7 +13,7 @@ const runtime = createRuntime(el<HTMLCanvasElement>('game'), {
     if (!vr) {el('blackout').style.opacity = '1'; window.setTimeout(() => el('blackout').style.opacity = '0', 350);}
   },
   paused() {menu.hidden = false; hud.hidden = true; crosshair.hidden = true; resume = ['intro', 'explore', 'knocking', 'threat'].includes(runtime.getState().phase); el('desktop').textContent = resume ? 'Wznów na komputerze →' : 'Podgląd na komputerze →';},
-  status(s) {el('objective').textContent = s.phase === 'intro' ? 'Akta Oddziału Zero · Spacja: pomiń wstęp' : s.hasKey ? 'Masz klucz. Otwórz drzwi na końcu korytarza.' : 'Znajdź klucz na biurku. E / prawy spust: interakcja.';},
+  status(s) {el('objective').textContent = s.phase === 'intro' ? 'Akta Oddziału Zero · Spacja: pomiń wstęp' : s.doorOpen ? 'Przejdź przez strefę techniczną. Lekarz nadal jest za tobą.' : s.hasKey ? 'Masz klucz. Otwórz przejście na końcu korytarza.' : 'Znajdź klucz na biurku. E / prawy spust: interakcja.';},
   fps(text) {el('performance').textContent = text;},
 });
 function hideUI(vr = false) {menu.hidden = true; result.hidden = true; hud.hidden = vr; crosshair.hidden = vr;}
