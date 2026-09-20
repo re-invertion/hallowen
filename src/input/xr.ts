@@ -38,7 +38,7 @@ export async function createXR(scene: Scene, onPause: (paused: boolean) => void,
       if (!right) return null;
       right.getWorldPointerRayToRef(pointerRay); pointerRay.length = 3; return pointerRay;
     },
-    update(dt: number, speed: number, turnSpeed: number, doorOpen: boolean, canMove: boolean, canSelect: boolean) {
+    update(dt: number, speed: number, turnSpeed: number, doorOpen: boolean, wardDoorOpen: boolean, canMove: boolean, canSelect: boolean) {
       if (!active()) return;
       const camera = xr.baseExperience.camera;
       const left = xr.input.controllers.find(c => c.inputSource.handedness === 'left');
@@ -47,7 +47,7 @@ export async function createXR(scene: Scene, onPause: (paused: boolean) => void,
         const f = camera.getForwardRay().direction;
         if (Math.hypot(f.x, f.z) > .01) forward = f.clone();
         const axes = left?.motionController?.getComponentOfType('thumbstick')?.axes ?? {x: 0, y: 0};
-        camera.position.copyFrom(moveHorizontal(camera.position, forward, axes, speed, dt, doorOpen));
+        camera.position.copyFrom(moveHorizontal(camera.position, forward, axes, speed, dt, doorOpen, wardDoorOpen));
         const turn = right?.motionController?.getComponentOfType('thumbstick')?.axes.x ?? 0;
         if (Math.abs(turn) > .15) {
           // Babylon converts pose changes into an offset reference space around the current head position.
