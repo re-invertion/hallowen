@@ -29,12 +29,32 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
   const fade = createEndingFade(scene);
   let state = initialState(), mode: 'menu' | 'desktop' | 'vr' = 'menu';
   let xr: Awaited<ReturnType<typeof createXR>> | null = null;
+  let xrPromise: ReturnType<typeof createXR> | null = null;
   let walkSpeed = 1.5, turnSpeed = 60, previousTime = performance.now(), nextStep = 0, endTime = 0;
   const dot = MeshBuilder.CreateSphere('aim dot', {diameter: .016, segments: 6}, scene);
   const dotMat = new StandardMaterial('aim material', scene); dotMat.emissiveColor = new Color3(.75, .9, .55); dotMat.disableLighting = true; dot.material = dotMat; dot.isPickable = false; dot.setEnabled(false);
   const desktop = createDesktop(camera, canvas, () => select(camera.getForwardRay(1.5)), () => pause());
   const activeCamera = (): Camera => xr?.active() ? xr.xr.baseExperience.camera : camera;
   const panelVisible = () => world.panel.isEnabled();
+
+  const withTimeout = async <T>(promise: Promise<T>, ms: number, message: string): Promise<T> => {
+    let timer = 0;
+    try {
+      return await Promise.race([
+        promise,
+        new Promise<T>((_, reject) => {timer = window.setTimeout(() => reject(new Error(message)), ms);}),
+      ]);
+    } finally {
+      if (timer) window.clearTimeout(timer);
+    }
+  };
+
+  function primeAudio() {
+    // Start audio while the click/tap still counts as a user gesture, but never make
+    // scene/VR startup wait for decoding the whole soundtrack and voice pack.
+    void audio.unlock().catch(() => callbacks.message('Dźwięk nie został odblokowany. Gra działa dalej bez niego.'));
+    void audio.preload().catch(() => callbacks.message('Nie wszystkie nagrania zostały wczytane. Gra działa dalej.'));
+  }
 
   function select(ray: Ray) {
     if (state.paused) return;
@@ -96,7 +116,7 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
     audio.reset();
     if (xr?.active()) xr.reset(); else {camera.position.set(0, 1.65, 4); camera.rotation.set(0, 0, 0);}
     synchronize();
-    await audio.unlock();
+    primeAudio();
     say('radio-start', true);
     if (mode === 'desktop') await desktop.enable().catch(() => callbacks.message('Kliknij scenę, aby przejąć mysz.'));
   }
@@ -107,8 +127,7 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
     state = {...initialState(), phase: 'intro'};
     world.panel.setEnabled(false);
     if (xr?.active()) xr.reset(); else {camera.position.set(0, 1.65, 4); camera.rotation.set(0, 0, 0);}
-    await audio.unlock();
-    await audio.preload().catch(() => callbacks.message('Nie wszystkie nagrania zostały wczytane.'));
+    primeAudio();
     previousTime = performance.now();
     intro.start(activeCamera());
     if (mode === 'desktop') await desktop.enable().catch(() => {});
@@ -216,34 +235,42 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
   return {
     scene,
     settings(walk: number, turn: number) {walkSpeed = walk; turnSpeed = turn;},
-    async startDesktop() {mode = 'desktop'; await beginIntro();},
+    async startDesktop() {
+      mode = 'desktop';
+      primeAudio();
+      await beginIntro();
+    },
     async startVR() {
+      // AudioContext.resume() must be kicked off directly from the user's click.
+      // Do it before any XR setup awaits, then continue independently of audio.
+      primeAudio();
       desktop.disable();
-      xr ??= await createXR(scene, paused => {
+      xrPromise ??= createXR(scene, paused => {
         state = {...state, paused};
         previousTime = performance.now();
         if (paused) audio.pause(); else void audio.unlock().catch(() => {});
       }, select, () => {
-        const head = xr!.xr.baseExperience.camera;
+        if (!xr) return;
+        const head = xr.xr.baseExperience.camera;
         camera.position.copyFrom(head.position);
         camera.rotation.copyFrom(head.rotationQuaternion.toEulerAngles());
         mode = 'menu';
         callbacks.paused();
       });
+      xr ??= await withTimeout(xrPromise, 8000, 'Inicjalizacja WebXR nie odpowiedziała w ciągu 8 sekund.');
       const resuming = ['intro', 'explore', 'knocking', 'threat'].includes(state.phase);
-      await xr.enter();
+      await withTimeout(xr.enter(), 12000, 'Meta Quest Browser nie rozpoczął sesji VR w ciągu 12 sekund.');
       mode = 'vr';
       if (resuming) {
         state = resumeOrStart(state);
         previousTime = performance.now();
-        await audio.unlock();
       } else await beginIntro();
     },
     async resumeDesktop() {
       state = {...state, paused: false};
       mode = 'desktop';
       previousTime = performance.now();
-      await audio.unlock();
+      primeAudio();
       await desktop.enable();
     },
     async menu() {
