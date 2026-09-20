@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {initialState, startGame, takeKey, openDoor, updateGame, dueKnocks, resumeOrStart} from './state';
+import {initialState, startGame, takeKey, openDoor, takeFuse, openWardDoor, updateGame, dueKnocks, resumeOrStart} from './state';
 
 describe('experience progression', () => {
   it('catches a player in either side lane without crossing the desk', () => {
@@ -17,7 +17,7 @@ describe('experience progression', () => {
   it('requires a key and resets the complete attempt', () => {
     expect(openDoor(startGame()).doorOpen).toBe(false);
     expect(openDoor(takeKey(startGame())).doorOpen).toBe(true);
-    expect(initialState()).toMatchObject({phase: 'start', hasKey: false, doorOpen: false, enemyZ: 2});
+    expect(initialState()).toMatchObject({phase: 'start', hasKey: false, doorOpen: false, hasFuse: false, wardDoorOpen: false, enemyZ: 2});
   });
   it('stops an observed, paused or finished enemy', () => {
     const s = {...startGame(), phase: 'threat' as const};
@@ -46,9 +46,15 @@ describe('experience progression', () => {
     expect(s.phase).toBe('threat');
     expect(updateGame(s, {dt: .01, observed: true, playerZ: 2.2}).phase).toBe('lost');
     const escapedDoor = openDoor(takeKey(s));
-    expect(updateGame(escapedDoor, {dt: .01, observed: true, playerZ: 19.6}).phase).toBe('threat');
-    expect(updateGame(escapedDoor, {dt: .01, observed: true, playerZ: 29.6}).phase).toBe('won');
-    expect(updateGame(s, {dt: .01, observed: true, playerZ: 29.6}).phase).not.toBe('won');
+    expect(updateGame(escapedDoor, {dt: .01, observed: true, playerZ: 29.6}).phase).toBe('threat');
+    expect(openWardDoor(escapedDoor).wardDoorOpen).toBe(false);
+    const powered = takeFuse(escapedDoor);
+    expect(powered.hasFuse).toBe(true);
+    const escapedWard = openWardDoor(powered);
+    expect(escapedWard.wardDoorOpen).toBe(true);
+    expect(updateGame(escapedWard, {dt: .01, observed: true, playerZ: 48.5}).phase).toBe('threat');
+    expect(updateGame(escapedWard, {dt: .01, observed: true, playerZ: 52.3}).phase).toBe('won');
+    expect(updateGame(powered, {dt: .01, observed: true, playerZ: 52.3}).phase).not.toBe('won');
   });
   it('schedules three knocks once and can repeat after reset', () => {
     expect(dueKnocks(-Number.EPSILON, 2)).toEqual([0, .8, 1.6]);
