@@ -19,6 +19,8 @@ describe('locomotion', () => {
     expect(moveHorizontal(new Vector3(1.27, 1.65, 5), f, {x: 1, y: 0}, 1.5, .05, false).x).toBeLessThanOrEqual(1.28);
     expect(moveHorizontal(new Vector3(0, 1.65, 18.7), f, {x: 0, y: -1}, 1.5, .05, false).z).toBeLessThan(18.8);
     expect(moveHorizontal(new Vector3(0, 1.65, 18.7), f, {x: 0, y: -1}, 1.5, .05, true).z).toBeGreaterThan(18.7);
+    expect(moveHorizontal(new Vector3(0, 1.65, 20.8), f, {x: 0, y: -1}, 1.5, .05, true).z).toBeGreaterThan(20.8);
+    expect(moveHorizontal(new Vector3(0, 1.65, 30.79), f, {x: 0, y: -1}, 1.5, .05, true).z).toBeLessThanOrEqual(30.8);
     expect(BLOCKERS.length).toBeGreaterThan(0);
     const n = moveHorizontal(new Vector3(-.39, 1.65, 10), f, {x: -1, y: 0}, 1.5, .05, false);
     expect(n.x).toBeGreaterThan(-.43);
