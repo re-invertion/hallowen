@@ -253,7 +253,21 @@ export function createCorridor(scene: Scene) {
       box('junction box', .16, .26, .22, side * 1.36, 2.05, z, dark);
       box('junction latch', .03, .04, .08, side * 1.27, 2.05, z + .05, metal);
     }
+    for (const z of [23.4, 28.2]) {
+      box('service pipe drop', .07, 1.05, .07, side * 1.25, 1.94, z, metal);
+      const valve = MeshBuilder.CreateTorus('service valve wheel', {diameter: .22, thickness: .035, tessellation: 10}, scene);
+      valve.position.set(side * 1.19, 1.55, z);
+      valve.rotation.y = Math.PI / 2;
+      valve.material = metal;
+    }
   }
+  for (const z of [23.8, 27.8]) {
+    box('service floor grate', 2.15, .012, .34, 0, .006, z, metal);
+    for (let i = -4; i <= 4; i++) box('service grate slot', .05, .014, .29, i * .21, .014, z, dark);
+  }
+  box('service electrical cabinet', .12, 1.02, .78, -1.36, 1.12, 26.1, metal);
+  box('service cabinet inset', .035, .78, .58, -1.285, 1.12, 26.1, dark);
+  for (let i = 0; i < 3; i++) box('service cabinet breaker', .025, .1, .12, -1.26, 1.38 - i * .22, 25.93, gold);
 
   for (const side of [-1, 1]) {
     box('treatment tile wall', .035, 2.35, 16.2, side * 1.46, 1.17, 39.25, clinic);
@@ -265,6 +279,19 @@ export function createCorridor(scene: Scene) {
     box('hanging curtain left', .03, 1.55, .78, -1.18, 1.78, z, lower);
     box('hanging curtain right', .03, 1.25, .7, 1.18, 1.62, z + .22, lower);
   }
+  for (const [side, z] of [[1, 35.1], [-1, 44.3]] as const) {
+    const cylinder = MeshBuilder.CreateCylinder('medical gas cylinder', {height: .86, diameter: .24, tessellation: 12}, scene);
+    cylinder.position.set(side * 1.12, .43, z);
+    cylinder.material = metal;
+    const cap = MeshBuilder.CreateCylinder('medical gas cap', {height: .11, diameter: .13, tessellation: 10}, scene);
+    cap.position.set(side * 1.12, .91, z);
+    cap.material = gold;
+    box('cylinder wall chain', .035, .035, .4, side * 1.31, .61, z, strap);
+  }
+  box('treatment wall sink', .32, .12, .62, -1.25, .88, 43.1, metal);
+  box('treatment sink basin', .12, .08, .42, -1.18, .91, 43.1, dark);
+  box('treatment faucet stem', .05, .24, .05, -1.19, 1.08, 42.96, metal);
+  box('treatment faucet neck', .05, .05, .22, -1.19, 1.18, 43.04, metal);
   for (const [x, z] of [[-1.05, 35.5], [1.02, 42.3]] as const) {
     box('treatment chair seat', .48, .12, .72, x, .58, z, metal);
     const back = box('treatment chair back', .48, .8, .1, x, 1.02, z + .28, metal);
