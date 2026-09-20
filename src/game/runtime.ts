@@ -99,6 +99,7 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
     const cameras = cam.rigCameras.length ? cam.rigCameras : [cam];
     const observed = state.phase === 'threat' && isObserved(cameras, world.enemyParts, world.walls);
     state = updateGame(state, {dt, observed, playerZ: cam.position.z, playerX: cam.position.x});
+    audio.setMood(state.phase, state.phase === 'threat' && !observed);
     if (previous.phase === 'explore' && state.phase === 'knocking') say('radio-warning', true);
     if (previous.phase === 'knocking' && state.phase === 'threat') say('whisper', false, cam.position.subtract(cam.getForwardRay().direction.scale(.4)), true);
     if (state.phase === 'knocking') {
