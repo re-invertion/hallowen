@@ -3,7 +3,7 @@ import {createVoicePlayer} from './voice';
 function rig() {
   const started: string[] = [], sources: {onended: null | (() => void); buffer: {id: string} | null; start: () => void; stop: () => void; connect: () => void; disconnect: () => void}[] = [];
   const node = () => ({connect() {}, disconnect: vi.fn(), gain: {value: 0}, frequency: {value: 0}, Q: {value: 0}, positionX: {value: 0}, positionY: {value: 0}, positionZ: {value: 0}});
-  const context = {destination: {}, createGain: node, createBiquadFilter: node, createPanner: node, createBufferSource() {const s = {onended: null as null | (() => void), buffer: null as {id: string} | null, start() {started.push(s.buffer!.id);}, stop() {}, connect() {}, disconnect() {}}; sources.push(s); return s;}} as unknown as AudioContext;
+  const context = {destination: {}, createGain: node, createBiquadFilter: node, createPanner: node, createBufferSource() {const s = {onended: null as null | (() => void), buffer: null as {id: string} | null, playbackRate: {value: 1}, detune: {value: 0}, start() {started.push(s.buffer!.id);}, stop() {}, connect() {}, disconnect() {}}; sources.push(s); return s;}} as unknown as AudioContext;
   const player = createVoicePlayer(() => context, async id => ({id}) as unknown as AudioBuffer);
   return {player, started, sources};
 }
