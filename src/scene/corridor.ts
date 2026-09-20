@@ -98,7 +98,9 @@ export function createCorridor(scene: Scene) {
       for (const offset of [-.58, .58]) box('door frame', .14, 2.42, .065, side * 1.41, 1.21, z + offset, metal);
       box('door lintel', .14, .08, 1.2, side * 1.41, 2.38, z, metal);
       box('cell handle', .09, .04, .18, side * 1.37, 1.05, z + .32, gold);
+      box('cell kick plate', .025, .34, .72, side * 1.405, .24, z, metal);
       for (const y of [.56, 1.8]) box('door hinge', .1, .16, .08, side * 1.37, y, z - .46, metal);
+      for (const y of [.36, 2.12]) for (const dz of [-.43, .43]) box('door fixing', .03, .035, .03, side * 1.355, y, z + dz, gold);
       box('door vent', .025, .32, .45, side * 1.39, .5, z, dark);
       for (let s = 0; s < 4; s++) box('door vent slat', .035, .028, .39, side * 1.365, .4 + s * .07, z, metal);
 
@@ -138,6 +140,8 @@ export function createCorridor(scene: Scene) {
   const openDoor = box('open key cell door', .08, 2.28, 1.08, -1.82, 1.14, 5.72, metal);
   openDoor.rotation.y = -.68;
   box('open key cell handle', .08, .05, .18, -1.61, 1.05, 5.94, gold);
+  const openKick = box('open key cell kick plate', .018, .34, .7, -1.805, .24, 5.72, metal);
+  openKick.rotation.y = -.68;
   for (const y of [.55, 1.78]) box('open door hinge', .09, .15, .08, -1.54, y, 5.37, metal);
 
   // Grounded, mechanically believable bed: feet touch the floor, rails and slats carry the mattress.
@@ -390,7 +394,7 @@ export function createCorridor(scene: Scene) {
       flicker.setMasterLevel(power);
       flicker.update(dt);
     }
-    ambient.intensity = ambientBase * (.025 + power * .975);
+    ambient.intensity = ambientBase * power;
     for (const {mat, base} of poweredStaticMaterials) mat.emissiveColor.copyFrom(base.scale(power));
     if (!Number.isFinite(dt) || dt <= 0) return;
     if (sparkLife > 0) {
