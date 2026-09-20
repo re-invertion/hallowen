@@ -97,9 +97,11 @@ async function action(task: () => Promise<void>, vr = false) {
   busy = true;
   enter.disabled = true;
   desktopButton.disabled = true;
+  const previousStatus = status.textContent;
+  status.textContent = vr ? 'Uruchamianie sesji VR…' : 'Uruchamianie podglądu…';
   try {
-    hideUI(vr);
     await task();
+    hideUI(vr);
   } catch (error) {
     menu.hidden = false;
     hud.hidden = true;
@@ -109,6 +111,7 @@ async function action(task: () => Promise<void>, vr = false) {
     busy = false;
     desktopButton.disabled = false;
     enter.disabled = !vrCanAttempt;
+    if (menu.hidden === false && !status.textContent?.startsWith('Nie udało się')) status.textContent = previousStatus;
   }
 }
 
