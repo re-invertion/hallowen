@@ -11,10 +11,11 @@ const enter = el<HTMLButtonElement>('enter');
 const desktopButton = el<HTMLButtonElement>('desktop');
 const status = el('status');
 
-let toastTimer = 0, resume = false, busy = false;
+let toastTimer = 0, resume = false, busy = false, vrCanAttempt = false;
 
 function detectVR() {
   if (!window.isSecureContext) {
+    vrCanAttempt = false;
     enter.disabled = true;
     status.textContent = 'VR wymaga HTTPS lub localhost. Podgląd na komputerze jest dostępny.';
     return;
@@ -22,6 +23,7 @@ function detectVR() {
 
   const xr = navigator.xr;
   if (!xr) {
+    vrCanAttempt = false;
     enter.disabled = true;
     status.textContent = 'Ta przeglądarka nie udostępnia WebXR. Podgląd na komputerze jest dostępny.';
     return;
@@ -29,19 +31,23 @@ function detectVR() {
 
   // Do not block the menu on isSessionSupported(). Some headset/browser versions
   // can leave this promise pending despite exposing a usable XR API.
+  vrCanAttempt = true;
   enter.disabled = false;
   status.textContent = 'WebXR wykryte. Możesz wejść do VR. Sprawdzam zgodność w tle…';
 
   void probeVrAvailability(() => xr.isSessionSupported('immersive-vr')).then(availability => {
     if (availability === 'supported') {
+      vrCanAttempt = true;
       enter.disabled = false;
       status.textContent = 'Gogle gotowe. Wejdź do VR, aby rozpocząć.';
     } else if (availability === 'unsupported') {
+      vrCanAttempt = false;
       enter.disabled = true;
       status.textContent = 'Tryb immersive-vr jest niedostępny. Podgląd na komputerze nadal działa.';
     } else {
       // Keep the button enabled. The actual enterXRAsync call remains the final
       // authority and its error is shown by action() if the browser rejects it.
+      vrCanAttempt = true;
       enter.disabled = false;
       status.textContent = 'WebXR jest dostępne. Automatyczna kontrola nie odpowiedziała — możesz wejść do VR.';
     }
@@ -102,7 +108,7 @@ async function action(task: () => Promise<void>, vr = false) {
   } finally {
     busy = false;
     desktopButton.disabled = false;
-    if (navigator.xr && window.isSecureContext) enter.disabled = false;
+    enter.disabled = !vrCanAttempt;
   }
 }
 
