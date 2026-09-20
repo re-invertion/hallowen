@@ -17,6 +17,8 @@ export function createRoomAmbience(context: () => AudioContext | null) {
     {position: new Vector3(1.95, 1.35, 10), events: ['groan', 'scream', 'bang'], next: random(8, 18)},
     {position: new Vector3(-1.95, 1.25, 14), events: ['metal', 'scrape', 'rapidKnocks'], next: random(5, 16)},
     {position: new Vector3(1.95, 1.4, 18), events: ['murmur', 'bang', 'groan'], next: random(10, 20)},
+    {position: new Vector3(-1.72, 1.2, 37.2), events: ['scream', 'groan', 'metal', 'rapidKnocks'], next: random(4, 10)},
+    {position: new Vector3(1.72, 1.2, 41.2), events: ['scream', 'groan', 'bang', 'scrape'], next: random(5, 12)},
   ];
   let busyUntil = 0;
 
