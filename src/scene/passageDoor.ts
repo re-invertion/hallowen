@@ -64,9 +64,9 @@ export function createPassageDoor(scene: Scene, options: PassageDoorOptions): Pa
   for (const [leaf, sign] of [[left, 1], [right, -1]] as const) {
     const lower = box('lower inset', 1.04, .62, .025, sign * .645, .52, -.061, inset);
     lower.parent = sign > 0 ? leftPivot : rightPivot;
-    const push = box('push plate', .16, .42, .025, sign * .18, 1.18, -.065, handle);
-    push.parent = leaf;
-    push.position.x = sign > 0 ? .18 : -.18;
+    const push = box('push plate', .16, .42, .025, sign * .2, 1.18, -.065, handle);
+    push.parent = sign > 0 ? leftPivot : rightPivot;
+    push.position.x = sign > 0 ? .82 : -.82;
     push.metadata = {interaction: action};
 
     const glass = box('wired glass', .56, .46, .028, sign * .645, 1.88, -.066, inset);
