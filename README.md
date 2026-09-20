@@ -10,8 +10,8 @@ Historia Oddziału Zero i program NACHTIGALL są fikcyjne. Projekt nie korzysta 
 - Polski dubbing: 11 gotowych plików MP3 — narrator, radio, szept oraz kwestie dotyczące klucza i zakończenia. Runtime stosuje osobny miks dla materiału archiwalnego, radia i głosu przestrzennego, a muzyka automatycznie ścisza się pod dialogami. Kwestie oczekujące są odtwarzane kolejno. Reset i pominięcie wstępu anulują poprzednie nagrania.
 - Nowa sylwetka lekarza: modelowany fartuch, rękawy, dłonie z palcami, buty i gładka twarz. Korytarz ma faktury tynku, metalu, drewna i kafli, ramy drzwi, numery sal, uchwyty, szuflady i dokumenty.
 - Napisy na panelach są zwrócone czytelną stroną do gracza; orientację sprawdza test geometryczny.
-- Adaptacyjny soundtrack jest generowany lokalnie przez Web Audio API: niski drone podczas eksploracji, rosnący dysonans przy uderzeniach i puls/sub-bass podczas pościgu. Nie wymaga dodatkowych plików muzycznych ani połączenia sieciowego podczas gry.
-- Obecne źródłowe nagrania głosu są syntetyczne, a kadr archiwalny wygenerowany przez AI. Pochodzenie i pełny prompt: [public/media/PROVENANCE.md](public/media/PROVENANCE.md). Transkrypcja: [public/audio/transcript.json](public/audio/transcript.json). Same pliki MP3 można podmienić na nagrania z lepszego neural TTS lub głos aktorski bez zmiany kodu.
+- Soundtrack korzysta z dwóch rzeczywistych, zapętlonych utworów ambient/horror CC0. Spokojniejsza warstwa gra podczas intro i eksploracji, a druga jest domiksowywana przy trzech uderzeniach i pościgu. Niski puls Web Audio pozostaje tylko jako dodatkowa warstwa napięcia i awaryjny fallback.
+- Dubbing jest generowany offline przez XTTS-v2 z polskim modelem językowym, a runtime nie zmienia już sztucznie wysokości ani tempa narratora. Pochodzenie muzyki, głosów i grafiki: [public/media/PROVENANCE.md](public/media/PROVENANCE.md). Transkrypcja: [public/audio/transcript.json](public/audio/transcript.json).
 
 ## Uruchomienie na komputerze
 
