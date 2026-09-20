@@ -1,25 +1,25 @@
 import {describe, expect, it} from 'vitest';
-import {soundtrackMood} from './soundtrack';
+import {soundtrackMix} from './soundtrack';
 
-describe('soundtrack mood', () => {
-  it('keeps the menu silent and gives gameplay a quiet bed', () => {
-    expect(soundtrackMood('start').master).toBe(0);
-    expect(soundtrackMood('explore').master).toBeGreaterThan(0);
-    expect(soundtrackMood('explore').master).toBeLessThan(.3);
+describe('soundtrack mix', () => {
+  it('keeps menu silent and gameplay clearly audible', () => {
+    expect(soundtrackMix('start').master).toBe(0);
+    expect(soundtrackMix('explore').master).toBeGreaterThan(.4);
+    expect(soundtrackMix('explore').bed).toBeGreaterThan(.7);
   });
 
-  it('raises tension during knocks and an unseen pursuit', () => {
-    const explore = soundtrackMood('explore');
-    const knocking = soundtrackMood('knocking');
-    const watched = soundtrackMood('threat', false);
-    const hunted = soundtrackMood('threat', true);
-    expect(knocking.dissonance).toBeGreaterThan(explore.dissonance);
-    expect(watched.pulse).toBeGreaterThan(explore.pulse);
+  it('brings in the danger layer during knocks and pursuit', () => {
+    const explore = soundtrackMix('explore');
+    const knocking = soundtrackMix('knocking');
+    const watched = soundtrackMix('threat', false);
+    const hunted = soundtrackMix('threat', true);
+    expect(knocking.danger).toBeGreaterThan(explore.danger);
+    expect(watched.danger).toBeGreaterThan(knocking.danger);
+    expect(hunted.danger).toBeGreaterThan(watched.danger);
     expect(hunted.pulse).toBeGreaterThan(watched.pulse);
-    expect(hunted.master).toBeGreaterThan(watched.master);
   });
 
   it('backs off after escape', () => {
-    expect(soundtrackMood('won').master).toBeLessThan(soundtrackMood('threat', true).master);
+    expect(soundtrackMix('won').master).toBeLessThan(soundtrackMix('threat', true).master);
   });
 });

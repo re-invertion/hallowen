@@ -5,13 +5,14 @@ import type {Phase} from './game/state';
 export function createAudio() {
   let context: AudioContext | null = null;
   const sources = new Set<AudioBufferSourceNode>();
-  const voices = new Map<string, Promise<AudioBuffer>>();
-  const bufferFor = (id: string) => {
+  const buffers = new Map<string, Promise<AudioBuffer>>();
+  const loadBuffer = (path: string) => {
     if (!context) return Promise.reject(new Error('Dźwięk nie został uruchomiony.'));
-    if (!voices.has(id)) voices.set(id, fetch(`${import.meta.env.BASE_URL}audio/${id}.mp3?v=audio-v2`).then(r => {if (!r.ok) throw new Error(`Brak nagrania ${id}`); return r.arrayBuffer();}).then(data => context!.decodeAudioData(data)));
-    return voices.get(id)!;
+    if (!buffers.has(path)) buffers.set(path, fetch(`${import.meta.env.BASE_URL}audio/${path}?v=audio-v3`).then(r => {if (!r.ok) throw new Error(`Brak nagrania ${path}`); return r.arrayBuffer();}).then(data => context!.decodeAudioData(data)));
+    return buffers.get(path)!;
   };
-  const soundtrack = createSoundtrack(() => context);
+  const bufferFor = (id: string) => loadBuffer(`${id}.mp3`);
+  const soundtrack = createSoundtrack(() => context, name => loadBuffer(`music/${name}.ogg`));
   const voice = createVoicePlayer(() => context, bufferFor, active => soundtrack.duck(active));
   function noise(seconds: number, volume: number, frequency: number, position?: Vector3) {
     if (!context || context.state !== 'running') return;
@@ -33,10 +34,10 @@ export function createAudio() {
   }
   return {
     speak: voice.speak,
-    async preload() {await Promise.all(['intro-1', 'intro-2', 'intro-3', 'intro-4', 'radio-start', 'radio-warning', 'whisper', 'key', 'locked', 'lost', 'won'].map(bufferFor));},
+    async preload() {await Promise.all([soundtrack.preload(), ...['intro-1', 'intro-2', 'intro-3', 'intro-4', 'radio-start', 'radio-warning', 'whisper', 'key', 'locked', 'lost', 'won'].map(bufferFor)]);},
     async unlock() {
       context ??= new AudioContext(); await context.resume();
-      soundtrack.start();
+      void soundtrack.start();
     },
     setMood(phase: Phase, hunted = false) {soundtrack.setMood(phase, hunted);},
     setListener(position: Vector3, forward: Vector3, up: Vector3) {
