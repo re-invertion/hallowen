@@ -1,6 +1,6 @@
 import {Vector3} from '@babylonjs/core/Maths/math.vector';
 import {createVoicePlayer} from './voice';
-import {createSoundtrack} from './soundtrack';
+import {createSoundtrack, type SoundtrackZone} from './soundtrack';
 import type {Phase} from './game/state';
 export function createAudio() {
   let context: AudioContext | null = null;
@@ -39,7 +39,7 @@ export function createAudio() {
       context ??= new AudioContext(); await context.resume();
       void soundtrack.start();
     },
-    setMood(phase: Phase, hunted = false) {soundtrack.setMood(phase, hunted);},
+    setMood(phase: Phase, hunted = false, zone: SoundtrackZone = 'corridor') {soundtrack.setMood(phase, hunted, zone);},
     setListener(position: Vector3, forward: Vector3, up: Vector3) {
       if (!context) return;
       const l = context.listener;

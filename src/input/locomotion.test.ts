@@ -20,7 +20,9 @@ describe('locomotion', () => {
     expect(moveHorizontal(new Vector3(0, 1.65, 18.7), f, {x: 0, y: -1}, 1.5, .05, false).z).toBeLessThan(18.8);
     expect(moveHorizontal(new Vector3(0, 1.65, 18.7), f, {x: 0, y: -1}, 1.5, .05, true).z).toBeGreaterThan(18.7);
     expect(moveHorizontal(new Vector3(0, 1.65, 20.8), f, {x: 0, y: -1}, 1.5, .05, true).z).toBeGreaterThan(20.8);
-    expect(moveHorizontal(new Vector3(0, 1.65, 30.79), f, {x: 0, y: -1}, 1.5, .05, true).z).toBeLessThanOrEqual(30.8);
+    expect(moveHorizontal(new Vector3(0, 1.65, 47.24), f, {x: 0, y: -1}, 1.5, .05, true).z).toBeLessThanOrEqual(47.25);
+    expect(moveHorizontal(new Vector3(0, 1.65, 47.24), f, {x: 0, y: -1}, 1.5, .05, true, true).z).toBeGreaterThan(47.24);
+    expect(moveHorizontal(new Vector3(0, 1.65, 53.19), f, {x: 0, y: -1}, 1.5, .05, true, true).z).toBeLessThanOrEqual(53.2);
     expect(BLOCKERS.length).toBeGreaterThan(0);
     const n = moveHorizontal(new Vector3(-.39, 1.65, 10), f, {x: -1, y: 0}, 1.5, .05, false);
     expect(n.x).toBeGreaterThan(-.43);

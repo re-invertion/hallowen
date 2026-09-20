@@ -1,6 +1,6 @@
 # TWORKI: ODDZIAŁ ZERO
 
-Prototyp horroru WebXR dla Meta Quest 2. Animowany wstęp fabularny, pierwszy korytarz, krótka strefa techniczna, latarka, klucz, trzy uderzenia i lekarz, który zbliża się, gdy nie znajduje się w polu widzenia. To nadal fragment gry, nie pełna 5–6-minutowa fabuła.
+Prototyp horroru WebXR dla Meta Quest 2. Animowany wstęp fabularny, pierwszy korytarz, strefa techniczna, blok zabiegowy, latarka, klucz, bezpiecznik, dwa rygle, trzy uderzenia i lekarz, który zbliża się, gdy nie znajduje się w polu widzenia. To nadal rozwijany fragment gry, nie pełna docelowa fabuła.
 
 Historia Oddziału Zero i program NACHTIGALL są fikcyjne. Projekt nie korzysta z p4project.
 
@@ -10,7 +10,7 @@ Historia Oddziału Zero i program NACHTIGALL są fikcyjne. Projekt nie korzysta 
 - Polski dubbing: 11 gotowych plików MP3 — narrator, radio, szept oraz kwestie dotyczące klucza i zakończenia. Runtime stosuje osobny miks dla materiału archiwalnego, radia i głosu przestrzennego, a muzyka automatycznie ścisza się pod dialogami. Kwestie oczekujące są odtwarzane kolejno. Reset i pominięcie wstępu anulują poprzednie nagrania.
 - Nowa sylwetka lekarza: modelowany fartuch, rękawy, dłonie z palcami, buty i gładka twarz. Korytarz ma faktury tynku, metalu, drewna i kafli, ramy drzwi, numery sal, uchwyty, szuflady i dokumenty.
 - Napisy na panelach są zwrócone czytelną stroną do gracza; orientację sprawdza test geometryczny.
-- Soundtrack korzysta z dwóch rzeczywistych, zapętlonych utworów ambient/horror CC0. Spokojniejsza warstwa gra podczas intro i eksploracji, a druga jest domiksowywana przy trzech uderzeniach i pościgu. Niski puls Web Audio pozostaje tylko jako dodatkowa warstwa napięcia i awaryjny fallback.
+- Soundtrack korzysta z trzech rzeczywistych, zapętlonych utworów ambient/horror CC0. Korytarz, pościg i blok zabiegowy mają osobne warstwy, które są płynnie miksowane zależnie od miejsca i zagrożenia. Niski puls Web Audio pozostaje jako dodatkowa warstwa napięcia i awaryjny fallback.
 - Dubbing jest generowany offline przez XTTS-v2 z polskim modelem językowym, a runtime nie zmienia już sztucznie wysokości ani tempa narratora. Pochodzenie muzyki, głosów i grafiki: [public/media/PROVENANCE.md](public/media/PROVENANCE.md). Transkrypcja: [public/audio/transcript.json](public/audio/transcript.json).
 
 ## Uruchomienie na komputerze
@@ -22,7 +22,7 @@ npm.cmd ci
 npm.cmd run dev
 ```
 
-Otwórz http://127.0.0.1:5173 i wybierz „Podgląd na komputerze”. WASD: chodzenie; mysz: rozglądanie; E: interakcja; Esc: pauza. Kliknięcie „Wznów na komputerze” ponownie przechwytuje mysz. Klucz leży na biurku. Drzwi przy końcu pierwszego korytarza prowadzą do strefy technicznej; próba kończy się dopiero po przejściu jej do końca.
+Otwórz http://127.0.0.1:5173 i wybierz „Podgląd na komputerze”. WASD: chodzenie; mysz: rozglądanie; E: interakcja; Esc: pauza. Klucz leży na biurku. Pierwsze drzwi prowadzą przez strefę techniczną do bloku zabiegowego. W bloku znajdź bezpiecznik na wózku, otwórz nim awaryjny rygiel i dotrzyj do schodów.
 
 ## Dostęp przez HTTPS
 
@@ -44,7 +44,7 @@ adb reverse --list
 ```
 
 3. W Meta Quest Browser ręcznie otwórz **http://localhost:5173/**, wybierz **WEJDŹ DO VR** i zaakceptuj wejście w VR, jeśli przeglądarka zapyta.
-4. Lewy drążek: chodzenie względem kierunku głowy; prawy drążek: płynny obrót. Prawy kontroler kieruje latarką. Wskaż klucz lub drzwi i naciśnij prawy spust w odległości do 1,5 m. Po otwarciu drzwi przejdź przez dalszą strefę techniczną — lekarz nadal może się zbliżać.
+4. Lewy drążek: chodzenie względem kierunku głowy; prawy drążek: płynny obrót. Prawy kontroler kieruje latarką. Wskaż klucz, bezpiecznik lub drzwi i naciśnij prawy spust w odległości do 1,5 m. Po strefie technicznej wejdziesz do bloku zabiegowego; lekarz nadal może się zbliżać.
 5. Po zakończeniu wskaż panel ponowienia i naciśnij spust. Wyjście z sesji VR pauzuje próbę; ponowne wejście wznawia niedokończoną próbę.
 
 Test przez USB wymaga włączonego komputera i serwera, choć sama gra renderuje się w goglach. Opublikowana wersja HTTPS działa bez komputera pod adresem `https://re-invertion.github.io/hallowen/`.

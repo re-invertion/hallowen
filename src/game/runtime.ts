@@ -15,13 +15,13 @@ import {createAudio} from '../audio';
 import {createEndingFade} from '../scene/ending';
 import {pickInteraction} from './interaction';
 import {createIntroFilm} from '../intro/film';
-import {initialState, startGame, updateGame, takeKey, openDoor, isPlaying, dueKnocks, resumeOrStart, type GameState} from './state';
+import {initialState, startGame, updateGame, takeKey, openDoor, takeFuse, openWardDoor, isPlaying, dueKnocks, resumeOrStart, type GameState} from './state';
 
 export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (text: string) => void; ended: (won: boolean, vr: boolean) => void; paused: () => void; status: (s: GameState) => void; fps: (value: string) => void}) {
   const engine = new Engine(canvas, true, {stencil: false, preserveDrawingBuffer: false});
   engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio));
   const scene = new Scene(engine);
-  const camera = new UniversalCamera('desktop', new Vector3(0, 1.65, 4), scene); camera.minZ = .05; camera.maxZ = 35;
+  const camera = new UniversalCamera('desktop', new Vector3(0, 1.65, 4), scene); camera.minZ = .05; camera.maxZ = 60;
   const world = createCorridor(scene), audio = createAudio();
   const say = (id: string, radio = false, position?: Vector3, queue = false) => {void audio.speak(id, radio, position, queue).catch(() => callbacks.message('Nagranie jest niedostępne. Możesz grać dalej.'));};
   const intro = createIntroFilm(scene, id => say(id), () => audio.knock(new Vector3(0, 1.5, 0)));
@@ -45,13 +45,15 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
     if (hit.distance > 1.5) {if (action) callbacks.message('Podejdź bliżej.'); return;}
     if (action === 'key') {state = takeKey(state); callbacks.message('Masz klucz. Drzwi są na końcu korytarza.'); say('key', true, undefined, true);}
     if (action === 'door') {state = openDoor(state); callbacks.message(state.doorOpen ? 'Otwarte. Idź dalej.' : 'Zamknięte. Znajdź klucz.'); if (!state.doorOpen) say('locked', false, undefined, true);}
+    if (action === 'fuse') {state = takeFuse(state); if (state.hasFuse) callbacks.message('Bezpiecznik 25 A. Pasuje do awaryjnego rygla.');}
+    if (action === 'wardDoor') {state = openWardDoor(state); callbacks.message(state.wardDoorOpen ? 'Rygiel puścił. Schody są za drzwiami.' : 'Brak zasilania. Znajdź bezpiecznik w bloku zabiegowym.');}
   }
   function pause() {
     if (mode === 'menu' || state.paused) return;
     state = {...state, paused: true}; audio.pause(); desktop.disable(); callbacks.paused();
   }
   function synchronize() {
-    world.key.setEnabled(!state.hasKey); world.door.setEnabled(!state.doorOpen);
+    world.key.setEnabled(!state.hasKey); world.door.setEnabled(!state.doorOpen); world.fuse.setEnabled(!state.hasFuse); world.wardDoor.setEnabled(!state.wardDoorOpen);
     world.enemy.setEnabled(state.phase === 'threat'); world.enemy.position.set(state.enemyX, 0, state.enemyZ);
     callbacks.status(state);
   }
@@ -88,8 +90,8 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
     const now = performance.now(), dt = Math.min(.05, (now - previousTime) / 1000); previousTime = now;
     const cam = activeCamera();
     if (mode === 'menu' && state.phase === 'start') {camera.rotation.y = .12 + Math.sin(now * .00012) * .06;}
-    if (isPlaying(state)) desktop.update(dt, walkSpeed, state.doorOpen);
-    xr?.update(dt, walkSpeed, turnSpeed, state.doorOpen, isPlaying(state), !state.paused);
+    if (isPlaying(state)) desktop.update(dt, walkSpeed, state.doorOpen, state.wardDoorOpen);
+    xr?.update(dt, walkSpeed, turnSpeed, state.doorOpen, state.wardDoorOpen, isPlaying(state), !state.paused);
     if (intro.update(dt, state.paused, cam)) void finishIntro();
     const ray = xr?.active() ? xr.ray() : cam.getForwardRay(16);
     if (ray) {world.flashlight.position.copyFrom(ray.origin); world.flashlight.direction.copyFrom(ray.direction); world.flashlight.setEnabled(true);} else world.flashlight.setEnabled(false);
@@ -99,7 +101,8 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
     const cameras = cam.rigCameras.length ? cam.rigCameras : [cam];
     const observed = state.phase === 'threat' && isObserved(cameras, world.enemyParts, world.walls);
     state = updateGame(state, {dt, observed, playerZ: cam.position.z, playerX: cam.position.x});
-    audio.setMood(state.phase, state.phase === 'threat' && !observed);
+    const zone = cam.position.z >= 31 ? 'treatment' : cam.position.z >= 19 ? 'service' : 'corridor';
+    audio.setMood(state.phase, state.phase === 'threat' && !observed, zone);
     if (previous.phase === 'explore' && state.phase === 'knocking') say('radio-warning', true);
     if (previous.phase === 'knocking' && state.phase === 'threat') say('whisper', false, cam.position.subtract(cam.getForwardRay().direction.scale(.4)), true);
     if (state.phase === 'knocking') {
