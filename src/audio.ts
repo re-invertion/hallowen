@@ -7,7 +7,7 @@ export function createAudio() {
   const voices = new Map<string, Promise<AudioBuffer>>();
   const bufferFor = (id: string) => {
     if (!context) return Promise.reject(new Error('Dźwięk nie został uruchomiony.'));
-    if (!voices.has(id)) voices.set(id, fetch(`/audio/${id}.mp3`).then(r => {if (!r.ok) throw new Error(`Brak nagrania ${id}`); return r.arrayBuffer();}).then(data => context!.decodeAudioData(data)));
+    if (!voices.has(id)) voices.set(id, fetch(`${import.meta.env.BASE_URL}audio/${id}.mp3`).then(r => {if (!r.ok) throw new Error(`Brak nagrania ${id}`); return r.arrayBuffer();}).then(data => context!.decodeAudioData(data)));
     return voices.get(id)!;
   };
   const voice = createVoicePlayer(() => context, bufferFor);
