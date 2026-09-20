@@ -240,11 +240,8 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
       primeAudio();
       await beginIntro();
     },
-    async startVR() {
-      // AudioContext.resume() must be kicked off directly from the user's click.
-      // Do it before any XR setup awaits, then continue independently of audio.
-      primeAudio();
-      desktop.disable();
+    async prepareVR() {
+      if (xr) return;
       xrPromise ??= createXR(scene, paused => {
         state = {...state, paused};
         previousTime = performance.now();
@@ -257,9 +254,19 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
         mode = 'menu';
         callbacks.paused();
       });
-      xr ??= await withTimeout(xrPromise, 8000, 'Inicjalizacja WebXR nie odpowiedziała w ciągu 8 sekund.');
+      xr = await withTimeout(xrPromise, 10000, 'Nie udało się przygotować WebXR w ciągu 10 sekund.');
+    },
+    async startVR() {
+      if (!xr) throw new Error('WebXR nie jest jeszcze przygotowane. Odczekaj chwilę i spróbuj ponownie.');
+
+      // This call must happen in the same user-gesture task as the button click.
+      // No await, XR setup, asset loading or capability probe is allowed before it.
+      const entering = xr.enter();
+
+      primeAudio();
+      desktop.disable();
       const resuming = ['intro', 'explore', 'knocking', 'threat'].includes(state.phase);
-      await withTimeout(xr.enter(), 12000, 'Meta Quest Browser nie rozpoczął sesji VR w ciągu 12 sekund.');
+      await withTimeout(entering, 12000, 'Meta Quest Browser nie rozpoczął sesji VR w ciągu 12 sekund.');
       mode = 'vr';
       if (resuming) {
         state = resumeOrStart(state);
