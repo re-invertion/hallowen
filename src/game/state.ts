@@ -1,14 +1,15 @@
 export type Phase = 'start' | 'intro' | 'explore' | 'knocking' | 'threat' | 'won' | 'lost';
 export interface GameState {
-  phase: Phase; paused: boolean; hasKey: boolean; doorOpen: boolean;
+  phase: Phase; paused: boolean; keyCellVisited: boolean; hasKey: boolean; doorOpen: boolean;
   hasFuse: boolean; wardDoorOpen: boolean;
   knockElapsed: number; enemyZ: number; enemyX: number;
 }
-export const initialState = (): GameState => ({phase: 'start', paused: false, hasKey: false, doorOpen: false, hasFuse: false, wardDoorOpen: false, knockElapsed: 0, enemyZ: 2, enemyX: 0});
+export const initialState = (): GameState => ({phase: 'start', paused: false, keyCellVisited: false, hasKey: false, doorOpen: false, hasFuse: false, wardDoorOpen: false, knockElapsed: 0, enemyZ: 2, enemyX: 0});
 export const startGame = (): GameState => ({...initialState(), phase: 'explore'});
 export const resumeOrStart = (s: GameState): GameState => ['intro', 'explore', 'knocking', 'threat'].includes(s.phase) ? {...s, paused: false} : startGame();
 export const isPlaying = (s: GameState) => !s.paused && ['explore', 'knocking', 'threat'].includes(s.phase);
-export const takeKey = (s: GameState): GameState => isPlaying(s) ? {...s, hasKey: true} : s;
+export const enterKeyCell = (s: GameState): GameState => isPlaying(s) ? {...s, keyCellVisited: true} : s;
+export const takeKey = (s: GameState): GameState => isPlaying(s) && s.keyCellVisited ? {...s, hasKey: true} : s;
 export const openDoor = (s: GameState): GameState => isPlaying(s) && s.hasKey ? {...s, doorOpen: true} : s;
 export const takeFuse = (s: GameState): GameState => isPlaying(s) && s.doorOpen ? {...s, hasFuse: true} : s;
 export const openWardDoor = (s: GameState): GameState => isPlaying(s) && s.hasFuse ? {...s, wardDoorOpen: true} : s;
