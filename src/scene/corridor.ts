@@ -115,11 +115,12 @@ export function createCorridor(scene: Scene) {
     }
   }
 
-  const bracket = box('pipe bracket source', .07, .06, .035, -1.32, 2.69, 1.2, metal);
+  // Only seven tiny brackets: plain meshes are more robust here than Babylon instances.
+  // This avoids the optional InstancedMesh runtime registration path being tree-shaken
+  // out of the production bundle on Quest.
   for (const side of [-1, 1]) for (const z of [3.2, 7.2, 11.2, 15.2]) {
     if (side === -1 && z === 7.2) continue;
-    const instance = bracket.createInstance('pipe bracket');
-    instance.position.set(side * 1.32, 2.69, z);
+    box('pipe bracket', .07, .06, .035, side * 1.32, 2.69, z, metal);
   }
 
   // Playable side cell: SALA 03, left side around z=6.
