@@ -1,0 +1,102 @@
+import {Scene} from '@babylonjs/core/scene';
+import {MeshBuilder} from '@babylonjs/core/Meshes/meshBuilder';
+import {StandardMaterial} from '@babylonjs/core/Materials/standardMaterial';
+import {Color3, Color4} from '@babylonjs/core/Maths/math.color';
+import {Vector3} from '@babylonjs/core/Maths/math.vector';
+import {TransformNode} from '@babylonjs/core/Meshes/transformNode';
+import {HemisphericLight} from '@babylonjs/core/Lights/hemisphericLight';
+import {PointLight} from '@babylonjs/core/Lights/pointLight';
+import {SpotLight} from '@babylonjs/core/Lights/spotLight';
+import {DynamicTexture} from '@babylonjs/core/Materials/Textures/dynamicTexture';
+import {Mesh} from '@babylonjs/core/Meshes/mesh';
+import {AbstractMesh} from '@babylonjs/core/Meshes/abstractMesh';
+import {faceTextToward} from './labels';
+import {agedMaterial} from './materials';
+import {createDoctor} from './doctor';
+
+export function createCorridor(scene: Scene) {
+  scene.clearColor = new Color4(.025, .035, .028, 1);
+  scene.fogMode = Scene.FOGMODE_EXP2; scene.fogDensity = .042; scene.fogColor = new Color3(.025, .035, .028);
+  const material = (name: string, color: string, emissive = false) => {
+    const m = new StandardMaterial(name, scene); m.diffuseColor = Color3.FromHexString(color); m.specularColor.set(.06, .06, .06);
+    if (emissive) {m.emissiveColor = m.diffuseColor; m.disableLighting = true;}
+    return m;
+  };
+  const concrete = agedMaterial(scene, 'cracked plaster', '#8a8b76', 'plaster'), lower = agedMaterial(scene, 'peeling hospital paint', '#3b5046', 'plaster'), metal = agedMaterial(scene, 'oxidized iron', '#3b433d', 'metal'), floorMat = agedMaterial(scene, 'old tiles', '#666451', 'tile'), wood = agedMaterial(scene, 'desk wood', '#59472f', 'wood'), gold = material('brass key', '#c8a553'), glowing = material('phosphor', '#c4d4a7', true), dark = material('unlit interior', '#080d0b');
+  const floorTexture = floorMat.diffuseTexture as DynamicTexture; floorTexture.uScale = 2; floorTexture.vScale = 13;
+  const walls: AbstractMesh[] = [];
+  function box(name: string, w: number, h: number, d: number, x: number, y: number, z: number, mat = concrete, blocker = false) {
+    const mesh = MeshBuilder.CreateBox(name, {width: w, height: h, depth: d}, scene); mesh.position.set(x, y, z); mesh.material = mat;
+    if (blocker) walls.push(mesh); return mesh;
+  }
+  box('floor', 3.4, .2, 22, 0, -.1, 10, floorMat);
+  box('ceiling', 3.4, .2, 22, 0, 3.1, 10, concrete);
+  for (const side of [-1, 1]) {
+    box('wall', .2, 3.1, 22, side * 1.6, 1.55, 10, concrete, true);
+    box('lower wall', .025, 1.3, 22, side * 1.485, .65, 10, lower);
+    box('trim', .04, .06, 22, side * 1.47, 1.3, 10, metal);
+    for (let z = 2; z < 19; z += 4) {
+      box('sealed cell', .07, 2.3, 1.05, side * 1.445, 1.15, z, metal);
+      box('cell slot', .025, .15, .32, side * 1.4, 1.65, z, dark);
+      for (let b = 0; b < 3; b++) box('slot bar', .04, .17, .018, side * 1.38, 1.65, z - .1 + b * .1, metal);
+      for (const offset of [-.58, .58]) box('door frame', .14, 2.42, .065, side * 1.41, 1.21, z + offset, metal);
+      box('door lintel', .14, .08, 1.2, side * 1.41, 2.38, z, metal);
+      box('cell handle', .09, .04, .18, side * 1.37, 1.05, z + .32, gold);
+    }
+    box('utility pipe', .07, .07, 21, side * 1.32, 2.7, 10, metal);
+  }
+  box('back wall', 3.4, 3.1, .2, 0, 1.55, 0, concrete, true);
+  const door = box('exit door', 3, 3, .1, 0, 1.5, 19, metal, true);
+  box('desk top', .85, .08, 1.4, -1.075, .85, 10, wood, true);
+  for (const z of [9.4, 10.6]) box('desk leg', .1, .82, .1, -.75, .41, z, metal);
+  for (const z of [9.5, 10.1]) {box('drawer', .72, .24, .5, -1.08, .68, z, wood); box('drawer pull', .025, .035, .17, -.707, .68, z, gold);}
+  const paper = material('aged documents', '#c2b99a');
+  const dossier = box('patient dossier', .32, .02, .36, -1.11, .904, 9.6, paper); dossier.rotation.y = .15;
+  for (let i = 0; i < 6; i++) box('document redaction', .22 - i * .015, .002, .008, -1.11, .917, 9.48 + i * .04, metal);
+  box('exit door inset', 2.6, 2.5, .06, 0, 0, -.07, lower).parent = door;
+  const latch = box('exit handle', .28, .055, .07, .85, -.4, -.14, gold); latch.parent = door;
+  const key = MeshBuilder.CreateTorus('key', {diameter: .1, thickness: .025, tessellation: 12}, scene);
+  key.position.set(-.85, .94, 10); key.material = gold;
+  const shaft = box('key shaft', .025, .02, .15, 0, 0, .09, gold); shaft.parent = key;
+  const tooth = box('key tooth', .06, .02, .025, .025, 0, .14, gold); tooth.parent = key;
+  key.metadata = {interaction: 'key'}; shaft.metadata = key.metadata; tooth.metadata = key.metadata;
+  const keyTarget = MeshBuilder.CreateSphere('key interaction target', {diameter: .24, segments: 6}, scene);
+  keyTarget.parent = key; keyTarget.position.z = .04; keyTarget.visibility = 0; keyTarget.metadata = key.metadata;
+  door.metadata = {interaction: 'door'};
+  const sign = (name: string, text: string, x: number, y: number, z: number, width: number, height: number) => {
+    const plane = MeshBuilder.CreatePlane(name, {width, height, sideOrientation: Mesh.DOUBLESIDE}, scene);
+    plane.position.set(x, y, z);
+    const texture = new DynamicTexture(name, {width: 1024, height: 256}, scene, false);
+    texture.drawText(text, null, 165, 'bold 62px monospace', '#c4cbb1', '#1b2821', true);
+    const mat = material(name, '#ffffff'); mat.diffuseTexture = texture; mat.emissiveColor.set(.18, .18, .14); plane.material = mat;
+    return plane;
+  };
+  const exitSign = sign('exit label', 'WYJŚCIE / ZAMKNIĘTE', 0, 2.2, 18.88, 2.2, .45); exitSign.parent = door; exitSign.position.set(0, .7, -.12);
+  sign('warning', 'NIE ODWRACAJ SIĘ', 0, 2.5, .13, 2.4, .45).rotation.y = Math.PI;
+  for (const side of [-1, 1]) for (let z = 2; z < 19; z += 4) {
+    const number = sign(`cell number ${side} ${z}`, `SALA ${String(Math.floor(z / 2) + (side > 0 ? 1 : 0)).padStart(2, '0')}`, side * 1.39, 2.07, z, .62, .16);
+    faceTextToward(number, new Vector3(0, 2.07, z));
+  }
+  const ambient = new HemisphericLight('ambient', new Vector3(0, 1, 0), scene); ambient.intensity = .24; ambient.groundColor = new Color3(.12, .17, .12);
+  for (const z of [3, 10, 17]) {
+    box('ceiling fixture', .7, .06, .2, 0, 2.94, z, glowing);
+    const light = new PointLight('ceiling light', new Vector3(0, 2.7, z), scene); light.diffuse = new Color3(.65, .75, .48); light.intensity = .35; light.range = 5;
+  }
+  const flashlight = new SpotLight('flashlight', new Vector3(0, 1.5, 4), new Vector3(0, 0, 1), .9, 3, scene);
+  flashlight.diffuse = new Color3(.9, .94, .78); flashlight.intensity = 3.5; flashlight.range = 16;
+  flashlight.renderPriority = 10;
+  const {root: enemy, parts: enemyParts} = createDoctor(scene);
+  // In-headset end screen is world-space, so head tracking stays live.
+  const panel = MeshBuilder.CreatePlane('result panel', {width: 1.5, height: .8, sideOrientation: Mesh.DOUBLESIDE}, scene);
+  const panelTexture = new DynamicTexture('result text', {width: 1024, height: 512}, scene, false);
+  panelTexture.drawText('', 0, 0, '40px monospace', '#d0ddbb', '#101b14', true);
+  const panelMat = material('result material', '#ffffff', true); panelMat.diffuseTexture = panelTexture; panelMat.emissiveTexture = panelTexture; panel.material = panelMat; panel.metadata = {interaction: 'restart'}; panel.setEnabled(false);
+  // End UI is an overlay in 3D: walls cannot hide it or block its pointer hit.
+  panel.renderingGroupId = 2;
+  function showPanel(title: string, position: Vector3, forward: Vector3) {
+    panelTexture.drawText('', 0, 0, '40px monospace', '#d0ddbb', '#101b14', true);
+    const ctx = panelTexture.getContext() as CanvasRenderingContext2D; ctx.textAlign = 'center'; ctx.fillStyle = '#b9c798'; ctx.font = '24px monospace'; ctx.fillText('PACJENT 47', 512, 110); ctx.font = '48px Georgia'; ctx.fillText(title, 512, 230); ctx.font = '28px monospace'; ctx.fillText('WSKAŻ I NACIŚNIJ SPUST', 512, 350); ctx.fillText('ABY PONOWIĆ PRÓBĘ', 512, 400); panelTexture.update();
+    const f = forward.lengthSquared() > .0001 ? forward.normalizeToNew() : Vector3.Forward(); panel.position.copyFrom(position.add(f.scale(1.3))); faceTextToward(panel, position); panel.setEnabled(true);
+  }
+  return {enemy, enemyParts, key, door, walls, flashlight, panel, showPanel, ambient, dispose: () => scene.dispose()};
+}

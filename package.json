@@ -1,0 +1,23 @@
+{
+  "name": "tworki-oddzial-zero",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^9.27.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/webxr": "^0.5.24",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  }
+}
