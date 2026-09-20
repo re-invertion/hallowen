@@ -14,11 +14,11 @@ export function createVoicePlayer(context: () => AudioContext | null, load: (id:
       if (!audio || generation !== epoch) return;
       const source = audio.createBufferSource(); source.buffer = buffer;
       const archive = id.startsWith('intro-') || id === 'whisper' || id === 'lost';
-      source.playbackRate.value = archive ? .985 : 1;
-      source.detune.value = archive ? -45 : 0;
-      const highpass = audio.createBiquadFilter(); highpass.type = 'highpass'; highpass.frequency.value = radio ? 240 : 72; highpass.Q.value = .55;
-      const lowpass = audio.createBiquadFilter(); lowpass.type = 'lowpass'; lowpass.frequency.value = radio ? 3300 : archive ? 5600 : 6800; lowpass.Q.value = radio ? .9 : .65;
-      const gain = audio.createGain(); gain.gain.value = radio ? .88 : archive ? .92 : .96;
+      source.playbackRate.value = 1;
+      source.detune.value = 0;
+      const highpass = audio.createBiquadFilter(); highpass.type = 'highpass'; highpass.frequency.value = radio ? 250 : 65; highpass.Q.value = .5;
+      const lowpass = audio.createBiquadFilter(); lowpass.type = 'lowpass'; lowpass.frequency.value = radio ? 3400 : archive ? 7600 : 8200; lowpass.Q.value = radio ? .8 : .45;
+      const gain = audio.createGain(); gain.gain.value = radio ? .9 : .98;
       source.connect(highpass); highpass.connect(lowpass); lowpass.connect(gain);
       let panner: PannerNode | null = null;
       if (position) {panner = audio.createPanner(); panner.panningModel = 'HRTF'; panner.refDistance = 1; panner.maxDistance = 18; panner.rolloffFactor = 1.2; panner.positionX.value = position.x; panner.positionY.value = position.y; panner.positionZ.value = -position.z; gain.connect(panner); panner.connect(audio.destination);} else gain.connect(audio.destination);
