@@ -49,4 +49,5 @@ jobs:
           git add public/audio/*.mp3 public/audio/transcript.json
           git diff --cached --quiet && exit 0
           git commit -m "Regenerate narration with XTTS v2"
+          git pull --rebase origin fix/real-music-xtts
           git push origin HEAD:fix/real-music-xtts
