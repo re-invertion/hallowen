@@ -14,6 +14,8 @@ import {agedMaterial} from './materials';
 import {createDoctor} from './doctor';
 import {createFlickerLight, type FlickerController, type FlickerProfile} from './flicker';
 import {createPowerGrid} from './powerGrid';
+import {createPassageDoor} from './passageDoor';
+import {createOperatingRooms} from './operatingRooms';
 
 export function createCorridor(scene: Scene) {
   scene.clearColor = new Color4(.025, .035, .028, 1);
@@ -217,8 +219,27 @@ export function createCorridor(scene: Scene) {
   flickers.push(keyCellLight);
 
   box('back wall', 3.4, 3.1, .2, 0, 1.55, 0, concrete, true);
-  const door = box('exit door', 3, 3, .1, 0, 1.5, 19, metal, true);
-  const wardDoor = box('treatment ward door', 3, 3, .1, 0, 1.5, 47.5, metal, true);
+  const passageDoor = createPassageDoor(scene, {
+    name: 'service passage door',
+    z: 19,
+    action: 'door',
+    frame: metal,
+    panel: metal,
+    inset: lower,
+    handle: gold,
+  });
+  const wardPassageDoor = createPassageDoor(scene, {
+    name: 'treatment ward passage door',
+    z: 47.5,
+    action: 'wardDoor',
+    frame: metal,
+    panel: metal,
+    inset: lower,
+    handle: gold,
+  });
+  walls.push(...passageDoor.blockers, ...wardPassageDoor.blockers);
+  const door = passageDoor.interaction;
+  const wardDoor = wardPassageDoor.interaction;
   box('final bulkhead', 3.4, 3.1, .2, 0, 1.55, 54, metal, true);
 
   for (const z of [21.2, 25.2, 29.2]) {
@@ -232,21 +253,45 @@ export function createCorridor(scene: Scene) {
       box('junction box', .16, .26, .22, side * 1.36, 2.05, z, dark);
       box('junction latch', .03, .04, .08, side * 1.27, 2.05, z + .05, metal);
     }
+    for (const z of [23.4, 28.2]) {
+      box('service pipe drop', .07, 1.05, .07, side * 1.25, 1.94, z, metal);
+      const valve = MeshBuilder.CreateTorus('service valve wheel', {diameter: .22, thickness: .035, tessellation: 10}, scene);
+      valve.position.set(side * 1.19, 1.55, z);
+      valve.rotation.y = Math.PI / 2;
+      valve.material = metal;
+    }
   }
+  for (const z of [23.8, 27.8]) {
+    box('service floor grate', 2.15, .012, .34, 0, .006, z, metal);
+    for (let i = -4; i <= 4; i++) box('service grate slot', .05, .014, .29, i * .21, .014, z, dark);
+  }
+  box('service electrical cabinet', .12, 1.02, .78, -1.36, 1.12, 26.1, metal);
+  box('service cabinet inset', .035, .78, .58, -1.285, 1.12, 26.1, dark);
+  for (let i = 0; i < 3; i++) box('service cabinet breaker', .025, .1, .12, -1.26, 1.38 - i * .22, 25.93, gold);
 
   for (const side of [-1, 1]) {
     box('treatment tile wall', .035, 2.35, 16.2, side * 1.46, 1.17, 39.25, clinic);
     box('treatment rail', .07, .08, 15.8, side * 1.39, 2.18, 39.3, metal);
-    for (const z of [33.2, 37.2, 41.2, 45.2]) {
-      box('observation frame', .06, 1.05, 1.15, side * 1.42, 1.55, z, metal);
-      box('observation glass', .025, .88, .95, side * 1.385, 1.55, z, dark);
-    }
   }
+  const operatingRooms = createOperatingRooms(scene);
   for (const z of [34.5, 40.5, 45]) {
     box('curtain rail', 2.45, .045, .06, 0, 2.62, z, metal);
     box('hanging curtain left', .03, 1.55, .78, -1.18, 1.78, z, lower);
     box('hanging curtain right', .03, 1.25, .7, 1.18, 1.62, z + .22, lower);
   }
+  for (const [side, z] of [[1, 35.1], [-1, 44.3]] as const) {
+    const cylinder = MeshBuilder.CreateCylinder('medical gas cylinder', {height: .86, diameter: .24, tessellation: 12}, scene);
+    cylinder.position.set(side * 1.12, .43, z);
+    cylinder.material = metal;
+    const cap = MeshBuilder.CreateCylinder('medical gas cap', {height: .11, diameter: .13, tessellation: 10}, scene);
+    cap.position.set(side * 1.12, .91, z);
+    cap.material = gold;
+    box('cylinder wall chain', .035, .035, .4, side * 1.31, .61, z, strap);
+  }
+  box('treatment wall sink', .32, .12, .62, -1.25, .88, 43.1, metal);
+  box('treatment sink basin', .12, .08, .42, -1.18, .91, 43.1, dark);
+  box('treatment faucet stem', .05, .24, .05, -1.19, 1.08, 42.96, metal);
+  box('treatment faucet neck', .05, .05, .22, -1.19, 1.18, 43.04, metal);
   for (const [x, z] of [[-1.05, 35.5], [1.02, 42.3]] as const) {
     box('treatment chair seat', .48, .12, .72, x, .58, z, metal);
     const back = box('treatment chair back', .48, .8, .1, x, 1.02, z + .28, metal);
@@ -272,10 +317,6 @@ export function createCorridor(scene: Scene) {
   fuseTarget.parent = fuse;
   fuseTarget.visibility = 0;
   fuseTarget.metadata = fuse.metadata;
-  box('ward door inset', 2.6, 2.5, .06, 0, 0, -.07, lower).parent = wardDoor;
-  const wardLatch = box('ward door handle', .28, .055, .07, .85, -.4, -.14, gold); wardLatch.parent = wardDoor;
-  wardDoor.metadata = {interaction: 'wardDoor'};
-
   box('desk top', .85, .08, 1.4, -1.075, .85, 10, wood, true);
   for (const z of [9.4, 10.6]) {
     box('desk leg', .1, .82, .1, -.75, .41, z, metal);
@@ -290,10 +331,6 @@ export function createCorridor(scene: Scene) {
   dossier.rotation.y = .15;
   for (let i = 0; i < 6; i++) box('document redaction', .22 - i * .015, .002, .008, -1.11, .917, 9.48 + i * .04, metal);
 
-  box('exit door inset', 2.6, 2.5, .06, 0, 0, -.07, lower).parent = door;
-  const latch = box('exit handle', .28, .055, .07, .85, -.4, -.14, gold); latch.parent = door;
-  door.metadata = {interaction: 'door'};
-
   const sign = (name: string, text: string, x: number, y: number, z: number, width: number, height: number) => {
     const plane = MeshBuilder.CreatePlane(name, {width, height, sideOrientation: Mesh.DOUBLESIDE}, scene);
     plane.position.set(x, y, z);
@@ -307,11 +344,11 @@ export function createCorridor(scene: Scene) {
     return plane;
   };
 
-  const exitSign = sign('exit label', 'PRZEJŚCIE / ZAMKNIĘTE', 0, 2.2, 18.88, 2.2, .45); exitSign.parent = door; exitSign.position.set(0, .7, -.12);
+  const exitSign = sign('exit label', 'PRZEJŚCIE / STREFA TECHNICZNA', 0, 2.55, 18.84, 2.2, .35);
   sign('warning', 'NIE ODWRACAJ SIĘ', 0, 2.5, .13, 2.4, .45).rotation.y = Math.PI;
   const serviceSign = sign('service zone', 'STREFA TECHNICZNA / -1', 0, 2.45, 20.35, 2.45, .34); faceTextToward(serviceSign, new Vector3(0, 2.45, 19));
   const treatmentSign = sign('treatment zone', 'BLOK ZABIEGOWY / 0', 0, 2.45, 31.35, 2.45, .34); faceTextToward(treatmentSign, new Vector3(0, 2.45, 30));
-  const powerSign = sign('power warning', 'ZASILANIE AWARYJNE', 0, 2.25, 47.36, 2.2, .3); powerSign.parent = wardDoor; powerSign.position.set(0, .72, -.12);
+  const powerSign = sign('power warning', 'ZASILANIE AWARYJNE', 0, 2.55, 47.34, 2.2, .3);
   const finalSign = sign('final warning', 'WYJŚCIE / SCHODY', 0, 2.45, 53.78, 2.1, .34); faceTextToward(finalSign, new Vector3(0, 2.45, 52));
 
   for (const side of [-1, 1]) for (let z = 2; z < 19; z += 4) {
@@ -396,6 +433,7 @@ export function createCorridor(scene: Scene) {
     }
     ambient.intensity = ambientBase * power;
     for (const {mat, base} of poweredStaticMaterials) mat.emissiveColor.copyFrom(base.scale(power));
+    operatingRooms.update(dt, power);
     if (!Number.isFinite(dt) || dt <= 0) return;
     if (sparkLife > 0) {
       sparkLife -= dt;
@@ -412,6 +450,9 @@ export function createCorridor(scene: Scene) {
 
   function resetAtmosphere() {
     powerGrid.reset();
+    passageDoor.reset();
+    wardPassageDoor.reset();
+    operatingRooms.reset();
     for (const flicker of flickers) flicker.reset();
     ambient.intensity = ambientBase;
     for (const {mat, base} of poweredStaticMaterials) mat.emissiveColor.copyFrom(base);
@@ -424,6 +465,10 @@ export function createCorridor(scene: Scene) {
   return {
     enemy, enemyParts, key, door, fuse, wardDoor, walls, flashlight, panel, showPanel, ambient,
     keyCellLight, updateAtmosphere, resetAtmosphere,
+    updateDoors(dt: number, firstOpen: boolean, secondOpen: boolean) {
+      passageDoor.update(dt, firstOpen);
+      wardPassageDoor.update(dt, secondOpen);
+    },
     forceBlackout(seconds = .55) {powerGrid.forceBlackout(seconds);},
     dispose() {for (const flicker of flickers) flicker.dispose();},
   };

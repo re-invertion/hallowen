@@ -99,9 +99,7 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
 
   function synchronize() {
     world.key.setEnabled(!state.hasKey);
-    world.door.setEnabled(!state.doorOpen);
     world.fuse.setEnabled(!state.hasFuse);
-    world.wardDoor.setEnabled(!state.wardDoorOpen);
     world.enemy.setEnabled(state.phase === 'threat');
     world.enemy.position.set(state.enemyX, 0, state.enemyZ);
     callbacks.status(state);
@@ -194,6 +192,7 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
       state.keyCellVisited && !state.hasKey ? .48 :
       state.doorOpen ? .32 : .12;
     world.updateAtmosphere(dt, electricalTension);
+    world.updateDoors(dt, state.doorOpen, state.wardDoorOpen);
 
     const previous = state;
     const cameras = cam.rigCameras.length ? cam.rigCameras : [cam];
