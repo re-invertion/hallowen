@@ -72,6 +72,7 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
       if (!hadKey && state.hasKey) {
         callbacks.message('Masz klucz. Wróć do głównego przejścia.');
         world.keyCellLight.forceOutage(.9);
+        world.forceBlackout(.72);
         audio.triggerKeyShock();
         say('key', true, undefined, true);
       }
@@ -187,7 +188,12 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
 
     const keyDistance = state.hasKey ? Number.POSITIVE_INFINITY : Vector3.Distance(cam.position, world.key.getAbsolutePosition());
     world.keyCellLight.setAgitated(state.keyCellVisited && !state.hasKey && keyDistance < 1.55);
-    world.updateAtmosphere(dt);
+    const electricalTension =
+      state.phase === 'threat' ? .95 :
+      state.phase === 'knocking' ? .7 :
+      state.keyCellVisited && !state.hasKey ? .48 :
+      state.doorOpen ? .32 : .12;
+    world.updateAtmosphere(dt, electricalTension);
 
     const previous = state;
     const cameras = cam.rigCameras.length ? cam.rigCameras : [cam];
@@ -197,8 +203,14 @@ export function createRuntime(canvas: HTMLCanvasElement, callbacks: {message: (t
     const zone = cam.position.z >= 31 ? 'treatment' : cam.position.z >= 19 ? 'service' : 'corridor';
     audio.setMood(state.phase, state.phase === 'threat' && !observed, zone);
 
-    if (previous.phase === 'explore' && state.phase === 'knocking') say('radio-warning', true);
-    if (previous.phase === 'knocking' && state.phase === 'threat') say('whisper', false, cam.position.subtract(cam.getForwardRay().direction.scale(.4)), true);
+    if (previous.phase === 'explore' && state.phase === 'knocking') {
+      world.forceBlackout(.2);
+      say('radio-warning', true);
+    }
+    if (previous.phase === 'knocking' && state.phase === 'threat') {
+      world.forceBlackout(.42);
+      say('whisper', false, cam.position.subtract(cam.getForwardRay().direction.scale(.4)), true);
+    }
 
     if (state.phase === 'knocking') {
       const before = previous.phase === 'knocking' ? previous.knockElapsed : -Number.EPSILON;

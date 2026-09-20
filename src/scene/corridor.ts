@@ -13,6 +13,7 @@ import {faceTextToward} from './labels';
 import {agedMaterial} from './materials';
 import {createDoctor} from './doctor';
 import {createFlickerLight, type FlickerController, type FlickerProfile} from './flicker';
+import {createPowerGrid} from './powerGrid';
 
 export function createCorridor(scene: Scene) {
   scene.clearColor = new Color4(.025, .035, .028, 1);
@@ -48,6 +49,8 @@ export function createCorridor(scene: Scene) {
 
   const walls: AbstractMesh[] = [];
   const flickers: FlickerController[] = [];
+  const powerGrid = createPowerGrid();
+  const poweredStaticMaterials: Array<{mat: StandardMaterial; base: Color3}> = [];
 
   function box(name: string, w: number, h: number, d: number, x: number, y: number, z: number, mat = concrete, blocker = false) {
     const mesh = MeshBuilder.CreateBox(name, {width: w, height: h, depth: d}, scene);
@@ -95,7 +98,9 @@ export function createCorridor(scene: Scene) {
       for (const offset of [-.58, .58]) box('door frame', .14, 2.42, .065, side * 1.41, 1.21, z + offset, metal);
       box('door lintel', .14, .08, 1.2, side * 1.41, 2.38, z, metal);
       box('cell handle', .09, .04, .18, side * 1.37, 1.05, z + .32, gold);
+      box('cell kick plate', .025, .34, .72, side * 1.405, .24, z, metal);
       for (const y of [.56, 1.8]) box('door hinge', .1, .16, .08, side * 1.37, y, z - .46, metal);
+      for (const y of [.36, 2.12]) for (const dz of [-.43, .43]) box('door fixing', .03, .035, .03, side * 1.355, y, z + dz, gold);
       box('door vent', .025, .32, .45, side * 1.39, .5, z, dark);
       for (let s = 0; s < 4; s++) box('door vent slat', .035, .028, .39, side * 1.365, .4 + s * .07, z, metal);
 
@@ -135,27 +140,51 @@ export function createCorridor(scene: Scene) {
   const openDoor = box('open key cell door', .08, 2.28, 1.08, -1.82, 1.14, 5.72, metal);
   openDoor.rotation.y = -.68;
   box('open key cell handle', .08, .05, .18, -1.61, 1.05, 5.94, gold);
+  const openKick = box('open key cell kick plate', .018, .34, .7, -1.805, .24, 5.72, metal);
+  openKick.rotation.y = -.68;
   for (const y of [.55, 1.78]) box('open door hinge', .09, .15, .08, -1.54, y, 5.37, metal);
 
+  // Grounded, mechanically believable bed: feet touch the floor, rails and slats carry the mattress.
   box('cell bed frame', 1.42, .12, .75, -3.16, .48, 5.28, metal);
   box('cell mattress', 1.34, .14, .68, -3.16, .59, 5.28, mattress);
   for (const x of [-3.78, -2.54]) for (const z of [5.02, 5.54]) box('bed leg', .06, .48, .06, x, .24, z, metal);
+  for (const x of [-3.55, -3.16, -2.77]) box('bed support slat', .05, .045, .66, x, .405, 5.28, metal);
   box('bed head rail', .06, .72, .72, -3.83, .82, 5.28, metal);
   box('bed foot rail', .06, .55, .72, -2.49, .73, 5.28, metal);
+  for (const y of [.62, .83, 1.04]) box('bed head crossbar', .045, .045, .62, -3.80, y, 5.28, metal);
   for (const z of [5.12, 5.43]) box('restraint strap', 1.2, .025, .07, -3.16, .675, z, strap);
+  for (const z of [5.03, 5.53]) box('bed floor grime', 1.34, .004, .12, -3.16, .002, z, grime);
 
+  // Table legs, braces and feet now form one coherent object instead of floating rods.
   box('key table top', .62, .07, .62, -3.25, .93, 6.26, wood);
-  for (const x of [-3.5, -3.0]) for (const z of [6.01, 6.51]) box('key table leg', .055, .88, .055, x, .46, z, metal);
+  for (const x of [-3.5, -3.0]) for (const z of [6.01, 6.51]) {
+    box('key table leg', .055, .88, .055, x, .44, z, metal);
+    box('key table foot', .11, .025, .11, x, .0125, z, metal);
+  }
+  for (const z of [6.01, 6.51]) box('key table brace', .46, .035, .035, -3.25, .35, z, metal);
+  for (const x of [-3.5, -3.0]) box('key table side brace', .035, .035, .46, x, .35, 6.26, metal);
+
   box('cell chair seat', .48, .1, .48, -2.28, .52, 6.6, wood);
   box('cell chair back', .48, .62, .08, -2.28, .83, 6.8, wood);
   for (const x of [-2.47, -2.09]) for (const z of [6.43, 6.76]) box('chair leg', .045, .5, .045, x, .25, z, metal);
+  box('chair brace front', .34, .032, .032, -2.28, .17, 6.43, metal);
+  box('chair brace back', .34, .032, .032, -2.28, .17, 6.76, metal);
+  for (const x of [-2.47, -2.09]) box('chair side brace', .032, .032, .29, x, .17, 6.595, metal);
 
+  // Bowl rests on the chair seat; paperwork rests directly on the tabletop.
   const bowl = MeshBuilder.CreateCylinder('metal bowl', {height: .06, diameter: .27, tessellation: 12}, scene);
-  bowl.position.set(-2.3, .6, 6.57);
+  bowl.position.set(-2.3, .60, 6.57);
   bowl.material = metal;
-  const papers = box('cell documents', .28, .015, .36, -3.13, .975, 6.18, paper);
+  const papers = box('cell documents', .28, .015, .36, -3.13, .973, 6.18, paper);
   papers.rotation.y = -.16;
-  for (let i = 0; i < 4; i++) box('cell document mark', .18 - i * .018, .004, .012, -3.12, .988, 6.08 + i * .055, dark);
+  for (let i = 0; i < 4; i++) box('cell document mark', .18 - i * .018, .004, .012, -3.12, .983, 6.08 + i * .055, dark);
+
+  // Small physical details make the room read as assembled hardware rather than floating primitives.
+  for (const z of [4.62, 7.38]) for (const x of [-3.92, -3.36, -2.8, -2.24, -1.68]) {
+    box('cell baseboard fixing', .035, .035, .018, x, .055, z, metal);
+  }
+  box('cell floor drain', .36, .012, .36, -2.12, .006, 5.04, metal);
+  for (let i = 0; i < 4; i++) box('drain slot', .045, .014, .29, -2.23 + i * .075, .014, 5.04, dark);
 
   box('key cell vent', .025, .52, .72, -4.015, 2.05, 5.28, dark);
   for (let i = 0; i < 5; i++) box('key cell vent slat', .03, .035, .65, -3.992, 1.9 + i * .075, 5.28, metal);
@@ -225,7 +254,15 @@ export function createCorridor(scene: Scene) {
     box('treatment chair base', .12, .55, .12, x, .27, z, metal);
   }
   box('instrument trolley top', .58, .06, .74, -1.0, .93, 38.7, metal);
-  for (const x of [-1.22, -.78]) for (const z of [38.42, 38.98]) box('trolley leg', .05, .85, .05, x, .46, z, metal);
+  box('instrument trolley lower shelf', .50, .045, .66, -1.0, .28, 38.7, metal);
+  for (const x of [-1.22, -.78]) for (const z of [38.42, 38.98]) {
+    box('trolley leg', .05, .76, .05, x, .53, z, metal);
+    const wheel = MeshBuilder.CreateCylinder('trolley caster', {height: .035, diameter: .12, tessellation: 10}, scene);
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(x, .06, z);
+    wheel.material = metal;
+  }
+  box('trolley push handle', .04, .28, .62, -1.29, .82, 38.7, metal);
   const fuse = MeshBuilder.CreateCylinder('emergency fuse', {height: .16, diameter: .07, tessellation: 12}, scene);
   fuse.rotation.z = Math.PI / 2;
   fuse.position.set(-1.0, 1.02, 38.68);
@@ -240,7 +277,11 @@ export function createCorridor(scene: Scene) {
   wardDoor.metadata = {interaction: 'wardDoor'};
 
   box('desk top', .85, .08, 1.4, -1.075, .85, 10, wood, true);
-  for (const z of [9.4, 10.6]) box('desk leg', .1, .82, .1, -.75, .41, z, metal);
+  for (const z of [9.4, 10.6]) {
+    box('desk leg', .1, .82, .1, -.75, .41, z, metal);
+    box('desk foot', .16, .025, .16, -.75, .0125, z, metal);
+  }
+  box('desk rear brace', .075, .42, 1.05, -1.38, .43, 10, wood);
   for (const z of [9.5, 10.1]) {
     box('drawer', .72, .24, .5, -1.08, .68, z, wood);
     box('drawer pull', .025, .035, .17, -.707, .68, z, gold);
@@ -261,6 +302,7 @@ export function createCorridor(scene: Scene) {
     const mat = material(name, '#ffffff');
     mat.diffuseTexture = texture;
     mat.emissiveColor.set(.18, .18, .14);
+    poweredStaticMaterials.push({mat, base: mat.emissiveColor.clone()});
     plane.material = mat;
     return plane;
   };
@@ -278,7 +320,8 @@ export function createCorridor(scene: Scene) {
   }
 
   const ambient = new HemisphericLight('ambient', new Vector3(0, 1, 0), scene);
-  ambient.intensity = .22;
+  const ambientBase = .22;
+  ambient.intensity = ambientBase;
   ambient.groundColor = new Color3(.12, .17, .12);
 
   const corridorLights: Array<[number, FlickerProfile]> = [
@@ -344,8 +387,15 @@ export function createCorridor(scene: Scene) {
     panel.setEnabled(true);
   }
 
-  function updateAtmosphere(dt: number) {
-    for (const flicker of flickers) flicker.update(dt);
+  function updateAtmosphere(dt: number, tension = 0) {
+    powerGrid.setTension(tension);
+    const power = powerGrid.update(dt);
+    for (const flicker of flickers) {
+      flicker.setMasterLevel(power);
+      flicker.update(dt);
+    }
+    ambient.intensity = ambientBase * power;
+    for (const {mat, base} of poweredStaticMaterials) mat.emissiveColor.copyFrom(base.scale(power));
     if (!Number.isFinite(dt) || dt <= 0) return;
     if (sparkLife > 0) {
       sparkLife -= dt;
@@ -361,7 +411,10 @@ export function createCorridor(scene: Scene) {
   }
 
   function resetAtmosphere() {
+    powerGrid.reset();
     for (const flicker of flickers) flicker.reset();
+    ambient.intensity = ambientBase;
+    for (const {mat, base} of poweredStaticMaterials) mat.emissiveColor.copyFrom(base);
     keyCellLight.setAgitated(false);
     spark.setEnabled(false);
     sparkLife = 0;
@@ -371,6 +424,7 @@ export function createCorridor(scene: Scene) {
   return {
     enemy, enemyParts, key, door, fuse, wardDoor, walls, flashlight, panel, showPanel, ambient,
     keyCellLight, updateAtmosphere, resetAtmosphere,
+    forceBlackout(seconds = .55) {powerGrid.forceBlackout(seconds);},
     dispose() {for (const flicker of flickers) flicker.dispose();},
   };
 }
