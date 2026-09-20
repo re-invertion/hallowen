@@ -1,6 +1,6 @@
 # TWORKI: ODDZIAŁ ZERO
 
-Prototyp horroru WebXR dla Meta Quest 2. Animowany wstęp fabularny, jeden korytarz, latarka, klucz, trzy uderzenia i lekarz, który zbliża się, gdy nie znajduje się w polu widzenia. To pierwszy fragment gry, nie pełna 5–6-minutowa fabuła.
+Prototyp horroru WebXR dla Meta Quest 2. Animowany wstęp fabularny, pierwszy korytarz, krótka strefa techniczna, latarka, klucz, trzy uderzenia i lekarz, który zbliża się, gdy nie znajduje się w polu widzenia. To nadal fragment gry, nie pełna 5–6-minutowa fabuła.
 
 Historia Oddziału Zero i program NACHTIGALL są fikcyjne. Projekt nie korzysta z p4project.
 
@@ -21,7 +21,7 @@ npm.cmd ci
 npm.cmd run dev
 ```
 
-Otwórz http://127.0.0.1:5173 i wybierz „Podgląd na komputerze”. WASD: chodzenie; mysz: rozglądanie; E: interakcja; Esc: pauza. Kliknięcie „Wznów na komputerze” ponownie przechwytuje mysz. Klucz leży na biurku, drzwi są na końcu korytarza.
+Otwórz http://127.0.0.1:5173 i wybierz „Podgląd na komputerze”. WASD: chodzenie; mysz: rozglądanie; E: interakcja; Esc: pauza. Kliknięcie „Wznów na komputerze” ponownie przechwytuje mysz. Klucz leży na biurku. Drzwi przy końcu pierwszego korytarza prowadzą do strefy technicznej; próba kończy się dopiero po przejściu jej do końca.
 
 ## Quest 2 przez USB
 
@@ -35,7 +35,7 @@ adb reverse --list
 ```
 
 3. W Meta Quest Browser ręcznie otwórz **http://localhost:5173/**, wybierz **WEJDŹ DO VR** i zaakceptuj wejście w VR, jeśli przeglądarka zapyta.
-4. Lewy drążek: chodzenie względem kierunku głowy; prawy drążek: płynny obrót. Prawy kontroler kieruje latarką. Wskaż klucz lub drzwi i naciśnij prawy spust w odległości do 1,5 m.
+4. Lewy drążek: chodzenie względem kierunku głowy; prawy drążek: płynny obrót. Prawy kontroler kieruje latarką. Wskaż klucz lub drzwi i naciśnij prawy spust w odległości do 1,5 m. Po otwarciu drzwi przejdź przez dalszą strefę techniczną — lekarz nadal może się zbliżać.
 5. Po zakończeniu wskaż panel ponowienia i naciśnij spust. Wyjście z sesji VR pauzuje próbę; ponowne wejście wznawia niedokończoną próbę.
 
 Test przez USB wymaga włączonego komputera i serwera, choć sama gra renderuje się w goglach. Docelowy hosting HTTPS umożliwi grę bez komputera; nie został jeszcze opublikowany.

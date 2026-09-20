@@ -50,7 +50,10 @@ try {
   await pose(0, 1.65, 18, 0, 1.65, 19);
   await page.keyboard.press('KeyE');
   await page.waitForFunction(() => window.__oddzial.state().doorOpen);
-  await pose(0, 1.65, 19.7, 0, 1.65, 20);
+  await pose(0, 1.65, 20.5, 0, 1.65, 24);
+  if (await page.evaluate(() => window.__oddzial.state().phase === 'won')) throw Error('First door ended the run before the service passage');
+  await page.screenshot({path: 'test-results/service-passage.png'});
+  await pose(0, 1.65, 29.7, 0, 1.65, 30.5);
   await page.waitForFunction(() => window.__oddzial.state().phase === 'won');
   await page.waitForTimeout(500);
   await page.screenshot({path: 'test-results/win.png'});
@@ -65,6 +68,6 @@ try {
     await page.waitForFunction(() => window.__oddzial.state().phase === 'lost');
     await page.waitForTimeout(400);
   }
-  console.log(JSON.stringify({checks: 'menu, key gate, key pickup, escape, death, five resets', errors}));
+  console.log(JSON.stringify({checks: 'menu, key gate, key pickup, service passage, escape, death, five resets', errors}));
   if (errors.length) process.exitCode = 1;
 } catch (error) {console.error('Browser errors:', errors); throw error;} finally {await browser.close();}

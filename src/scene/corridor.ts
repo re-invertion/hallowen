@@ -23,18 +23,18 @@ export function createCorridor(scene: Scene) {
     return m;
   };
   const concrete = agedMaterial(scene, 'cracked plaster', '#8a8b76', 'plaster'), lower = agedMaterial(scene, 'peeling hospital paint', '#3b5046', 'plaster'), metal = agedMaterial(scene, 'oxidized iron', '#3b433d', 'metal'), floorMat = agedMaterial(scene, 'old tiles', '#666451', 'tile'), wood = agedMaterial(scene, 'desk wood', '#59472f', 'wood'), gold = material('brass key', '#c8a553'), glowing = material('phosphor', '#c4d4a7', true), dark = material('unlit interior', '#080d0b');
-  const floorTexture = floorMat.diffuseTexture as DynamicTexture; floorTexture.uScale = 2; floorTexture.vScale = 13;
+  const floorTexture = floorMat.diffuseTexture as DynamicTexture; floorTexture.uScale = 2; floorTexture.vScale = 19;
   const walls: AbstractMesh[] = [];
   function box(name: string, w: number, h: number, d: number, x: number, y: number, z: number, mat = concrete, blocker = false) {
     const mesh = MeshBuilder.CreateBox(name, {width: w, height: h, depth: d}, scene); mesh.position.set(x, y, z); mesh.material = mat;
     if (blocker) walls.push(mesh); return mesh;
   }
-  box('floor', 3.4, .2, 22, 0, -.1, 10, floorMat);
-  box('ceiling', 3.4, .2, 22, 0, 3.1, 10, concrete);
+  box('floor', 3.4, .2, 32, 0, -.1, 15, floorMat);
+  box('ceiling', 3.4, .2, 32, 0, 3.1, 15, concrete);
   for (const side of [-1, 1]) {
-    box('wall', .2, 3.1, 22, side * 1.6, 1.55, 10, concrete, true);
-    box('lower wall', .025, 1.3, 22, side * 1.485, .65, 10, lower);
-    box('trim', .04, .06, 22, side * 1.47, 1.3, 10, metal);
+    box('wall', .2, 3.1, 32, side * 1.6, 1.55, 15, concrete, true);
+    box('lower wall', .025, 1.3, 32, side * 1.485, .65, 15, lower);
+    box('trim', .04, .06, 32, side * 1.47, 1.3, 15, metal);
     for (let z = 2; z < 19; z += 4) {
       box('sealed cell', .07, 2.3, 1.05, side * 1.445, 1.15, z, metal);
       box('cell slot', .025, .15, .32, side * 1.4, 1.65, z, dark);
@@ -43,10 +43,20 @@ export function createCorridor(scene: Scene) {
       box('door lintel', .14, .08, 1.2, side * 1.41, 2.38, z, metal);
       box('cell handle', .09, .04, .18, side * 1.37, 1.05, z + .32, gold);
     }
-    box('utility pipe', .07, .07, 21, side * 1.32, 2.7, 10, metal);
+    box('utility pipe', .07, .07, 31, side * 1.32, 2.7, 15, metal);
   }
   box('back wall', 3.4, 3.1, .2, 0, 1.55, 0, concrete, true);
   const door = box('exit door', 3, 3, .1, 0, 1.5, 19, metal, true);
+  box('final bulkhead', 3.4, 3.1, .2, 0, 1.55, 31, metal, true);
+  for (const z of [21.2, 25.2, 29.2]) {
+    box('service arch left', .18, 2.9, .18, -1.43, 1.45, z, metal, true);
+    box('service arch right', .18, 2.9, .18, 1.43, 1.45, z, metal, true);
+    box('service arch top', 2.7, .16, .18, 0, 2.86, z, metal);
+  }
+  for (const side of [-1, 1]) {
+    box('service conduit', .08, .08, 9.4, side * 1.18, 2.42, 25.3, metal);
+    for (const z of [22.6, 24.8, 27, 29.2]) box('junction box', .16, .26, .22, side * 1.36, 2.05, z, dark);
+  }
   box('desk top', .85, .08, 1.4, -1.075, .85, 10, wood, true);
   for (const z of [9.4, 10.6]) box('desk leg', .1, .82, .1, -.75, .41, z, metal);
   for (const z of [9.5, 10.1]) {box('drawer', .72, .24, .5, -1.08, .68, z, wood); box('drawer pull', .025, .035, .17, -.707, .68, z, gold);}
@@ -71,14 +81,16 @@ export function createCorridor(scene: Scene) {
     const mat = material(name, '#ffffff'); mat.diffuseTexture = texture; mat.emissiveColor.set(.18, .18, .14); plane.material = mat;
     return plane;
   };
-  const exitSign = sign('exit label', 'WYJŚCIE / ZAMKNIĘTE', 0, 2.2, 18.88, 2.2, .45); exitSign.parent = door; exitSign.position.set(0, .7, -.12);
+  const exitSign = sign('exit label', 'PRZEJŚCIE / ZAMKNIĘTE', 0, 2.2, 18.88, 2.2, .45); exitSign.parent = door; exitSign.position.set(0, .7, -.12);
   sign('warning', 'NIE ODWRACAJ SIĘ', 0, 2.5, .13, 2.4, .45).rotation.y = Math.PI;
+  const serviceSign = sign('service zone', 'STREFA TECHNICZNA / -1', 0, 2.45, 20.35, 2.45, .34); faceTextToward(serviceSign, new Vector3(0, 2.45, 19));
+  const finalSign = sign('final warning', 'NIE OGLĄDAJ SIĘ', 0, 2.45, 30.78, 2.1, .34); faceTextToward(finalSign, new Vector3(0, 2.45, 29));
   for (const side of [-1, 1]) for (let z = 2; z < 19; z += 4) {
     const number = sign(`cell number ${side} ${z}`, `SALA ${String(Math.floor(z / 2) + (side > 0 ? 1 : 0)).padStart(2, '0')}`, side * 1.39, 2.07, z, .62, .16);
     faceTextToward(number, new Vector3(0, 2.07, z));
   }
   const ambient = new HemisphericLight('ambient', new Vector3(0, 1, 0), scene); ambient.intensity = .24; ambient.groundColor = new Color3(.12, .17, .12);
-  for (const z of [3, 10, 17]) {
+  for (const z of [3, 10, 17, 23.5, 28.5]) {
     box('ceiling fixture', .7, .06, .2, 0, 2.94, z, glowing);
     const light = new PointLight('ceiling light', new Vector3(0, 2.7, z), scene); light.diffuse = new Color3(.65, .75, .48); light.intensity = .35; light.range = 5;
   }

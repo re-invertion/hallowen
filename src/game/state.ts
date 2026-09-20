@@ -13,7 +13,7 @@ export const dueKnocks = (previous: number, current: number) => [0, .8, 1.6].fil
 export function updateGame(s: GameState, input: {dt: number; observed: boolean; playerZ: number; playerX?: number}): GameState {
   if (!isPlaying(s) || !Number.isFinite(input.dt) || input.dt <= 0) return s;
   const dt = Math.min(input.dt, .05);
-  if (s.doorOpen && input.playerZ > 19.5) return {...s, phase: 'won'};
+  if (s.doorOpen && input.playerZ > 29.5) return {...s, phase: 'won'};
   if (s.phase === 'explore' && input.playerZ >= 7) return {...s, phase: 'knocking', knockElapsed: 0};
   if (s.phase === 'knocking') {
     const knockElapsed = s.knockElapsed + dt;

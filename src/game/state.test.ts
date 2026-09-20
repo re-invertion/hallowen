@@ -45,8 +45,10 @@ describe('experience progression', () => {
     for (let i = 0; i < 50; i++) s = updateGame(s, {dt: .05, observed: true, playerZ: 8});
     expect(s.phase).toBe('threat');
     expect(updateGame(s, {dt: .01, observed: true, playerZ: 2.2}).phase).toBe('lost');
-    expect(updateGame(openDoor(takeKey(s)), {dt: .01, observed: true, playerZ: 19.6}).phase).toBe('won');
-    expect(updateGame(s, {dt: .01, observed: true, playerZ: 19.6}).phase).not.toBe('won');
+    const escapedDoor = openDoor(takeKey(s));
+    expect(updateGame(escapedDoor, {dt: .01, observed: true, playerZ: 19.6}).phase).toBe('threat');
+    expect(updateGame(escapedDoor, {dt: .01, observed: true, playerZ: 29.6}).phase).toBe('won');
+    expect(updateGame(s, {dt: .01, observed: true, playerZ: 29.6}).phase).not.toBe('won');
   });
   it('schedules three knocks once and can repeat after reset', () => {
     expect(dueKnocks(-Number.EPSILON, 2)).toEqual([0, .8, 1.6]);
