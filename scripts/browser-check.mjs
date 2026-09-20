@@ -22,6 +22,12 @@ try {
     };
   });
   if (doctorVisual.detailed < 40 || !doctorVisual.hasFeaturelessHead || !doctorVisual.hasBlur || doctorVisual.hasFacialFeatures) throw Error(`Doctor visual regression: ${JSON.stringify(doctorVisual)}`);
+  const theatreVisual = await page.evaluate(() => ({
+    glass: window.__oddzial.scene.meshes.filter(m => m.name === 'operating window glass').length,
+    doorLeaves: window.__oddzial.scene.meshes.filter(m => /passage door .* leaf/.test(m.name)).length,
+    restrainedPatients: window.__oddzial.scene.transformNodes.filter(n => n.name.startsWith('restrained patient ')).length,
+  }));
+  if (theatreVisual.glass < 4 || theatreVisual.doorLeaves < 4 || theatreVisual.restrainedPatients < 2) throw Error(`Treatment block visual regression: ${JSON.stringify(theatreVisual)}`);
   await mkdir('test-results', {recursive: true});
   await page.screenshot({path: 'test-results/menu.png'});
 
@@ -84,6 +90,13 @@ try {
   await pose(0, 1.65, 18, 0, 1.65, 19);
   await page.keyboard.press('KeyE');
   await page.waitForFunction(() => window.__oddzial.state().doorOpen);
+  await page.waitForTimeout(650);
+  const firstDoorSwing = await page.evaluate(() => {
+    const left = window.__oddzial.scene.getTransformNodeByName('service passage door left hinge');
+    const right = window.__oddzial.scene.getTransformNodeByName('service passage door right hinge');
+    return Math.abs(left?.rotation.y ?? 0) + Math.abs(right?.rotation.y ?? 0);
+  });
+  if (firstDoorSwing < .5) throw Error(`First passage door did not visibly animate: ${firstDoorSwing}`);
 
   await pose(0, 1.65, 20.5, 0, 1.65, 24);
   if (await page.evaluate(() => window.__oddzial.state().phase === 'won')) throw Error('First door ended the run before the service passage');
@@ -127,7 +140,7 @@ try {
   }
 
   console.log(JSON.stringify({
-    checks: 'startup readiness, detailed faceless doctor, menu, old key location absent, open-cell visit, normal key pickup, key gate, service passage, treatment ward, fuse gate, escape, death, five resets',
+    checks: 'startup readiness, detailed faceless doctor, animated passage doors, operating-room glass and restrained patients, menu, open-cell visit, key gate, service passage, treatment ward, fuse gate, escape, death, five resets',
     errors,
   }));
   if (errors.length) process.exitCode = 1;
