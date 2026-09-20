@@ -1,6 +1,5 @@
 import './style.css';
 import {createRuntime} from './game/runtime';
-import {probeVrAvailability} from './vrSupport';
 
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const menu = el('menu');
@@ -12,49 +11,6 @@ const desktopButton = el<HTMLButtonElement>('desktop');
 const status = el('status');
 
 let toastTimer = 0, resume = false, busy = false, vrCanAttempt = false;
-
-function detectVR() {
-  if (!window.isSecureContext) {
-    vrCanAttempt = false;
-    enter.disabled = true;
-    status.textContent = 'VR wymaga HTTPS lub localhost. Podgląd na komputerze jest dostępny.';
-    return;
-  }
-
-  const xr = navigator.xr;
-  if (!xr) {
-    vrCanAttempt = false;
-    enter.disabled = true;
-    status.textContent = 'Ta przeglądarka nie udostępnia WebXR. Podgląd na komputerze jest dostępny.';
-    return;
-  }
-
-  // Do not block the menu on isSessionSupported(). Some headset/browser versions
-  // can leave this promise pending despite exposing a usable XR API.
-  vrCanAttempt = true;
-  enter.disabled = false;
-  status.textContent = 'WebXR wykryte. Możesz wejść do VR. Sprawdzam zgodność w tle…';
-
-  void probeVrAvailability(() => xr.isSessionSupported('immersive-vr')).then(availability => {
-    if (availability === 'supported') {
-      vrCanAttempt = true;
-      enter.disabled = false;
-      status.textContent = 'Gogle gotowe. Wejdź do VR, aby rozpocząć.';
-    } else if (availability === 'unsupported') {
-      vrCanAttempt = false;
-      enter.disabled = true;
-      status.textContent = 'Tryb immersive-vr jest niedostępny. Podgląd na komputerze nadal działa.';
-    } else {
-      // Keep the button enabled. The actual enterXRAsync call remains the final
-      // authority and its error is shown by action() if the browser rejects it.
-      vrCanAttempt = true;
-      enter.disabled = false;
-      status.textContent = 'WebXR jest dostępne. Automatyczna kontrola nie odpowiedziała — możesz wejść do VR.';
-    }
-  });
-}
-
-detectVR();
 
 let runtime: ReturnType<typeof createRuntime>;
 try {
@@ -89,6 +45,37 @@ try {
   status.textContent = `Błąd inicjalizacji sceny: ${error instanceof Error ? error.message : String(error)}`;
   throw error;
 }
+
+async function prepareVR() {
+  if (!window.isSecureContext) {
+    vrCanAttempt = false;
+    enter.disabled = true;
+    status.textContent = 'VR wymaga HTTPS lub localhost. Podgląd na komputerze jest dostępny.';
+    return;
+  }
+  if (!navigator.xr) {
+    vrCanAttempt = false;
+    enter.disabled = true;
+    status.textContent = 'Ta przeglądarka nie udostępnia WebXR. Podgląd na komputerze jest dostępny.';
+    return;
+  }
+
+  vrCanAttempt = false;
+  enter.disabled = true;
+  status.textContent = 'Przygotowywanie WebXR…';
+  try {
+    await runtime.prepareVR();
+    vrCanAttempt = true;
+    enter.disabled = false;
+    status.textContent = 'Gogle gotowe. Wejdź do VR, aby rozpocząć.';
+  } catch (error) {
+    vrCanAttempt = false;
+    enter.disabled = true;
+    status.textContent = `Nie udało się przygotować VR: ${error instanceof Error ? error.message : String(error)}`;
+  }
+}
+
+void prepareVR();
 
 function hideUI(vr = false) {menu.hidden = true; result.hidden = true; hud.hidden = vr; crosshair.hidden = vr;}
 
