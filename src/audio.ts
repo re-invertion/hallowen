@@ -1,8 +1,9 @@
 import {Vector3} from '@babylonjs/core/Maths/math.vector';
 import {createVoicePlayer} from './voice';
+import {createSoundtrack} from './soundtrack';
+import type {Phase} from './game/state';
 export function createAudio() {
   let context: AudioContext | null = null;
-  let drone: AudioBufferSourceNode | null = null;
   const sources = new Set<AudioBufferSourceNode>();
   const voices = new Map<string, Promise<AudioBuffer>>();
   const bufferFor = (id: string) => {
@@ -10,7 +11,8 @@ export function createAudio() {
     if (!voices.has(id)) voices.set(id, fetch(`${import.meta.env.BASE_URL}audio/${id}.mp3`).then(r => {if (!r.ok) throw new Error(`Brak nagrania ${id}`); return r.arrayBuffer();}).then(data => context!.decodeAudioData(data)));
     return voices.get(id)!;
   };
-  const voice = createVoicePlayer(() => context, bufferFor);
+  const soundtrack = createSoundtrack(() => context);
+  const voice = createVoicePlayer(() => context, bufferFor, active => soundtrack.duck(active));
   function noise(seconds: number, volume: number, frequency: number, position?: Vector3) {
     if (!context || context.state !== 'running') return;
     const audio = context;
@@ -34,13 +36,9 @@ export function createAudio() {
     async preload() {await Promise.all(['intro-1', 'intro-2', 'intro-3', 'intro-4', 'radio-start', 'radio-warning', 'whisper', 'key', 'locked', 'lost', 'won'].map(bufferFor));},
     async unlock() {
       context ??= new AudioContext(); await context.resume();
-      if (!drone) {
-        const buffer = context.createBuffer(1, context.sampleRate * 4, context.sampleRate);
-        const data = buffer.getChannelData(0); let last = 0;
-        for (let i = 0; i < data.length; i++) {last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; data[i] = last * .12;}
-        drone = context.createBufferSource(); drone.buffer = buffer; drone.loop = true; drone.connect(context.destination); drone.start();
-      }
+      soundtrack.start();
     },
+    setMood(phase: Phase, hunted = false) {soundtrack.setMood(phase, hunted);},
     setListener(position: Vector3, forward: Vector3, up: Vector3) {
       if (!context) return;
       const l = context.listener;
@@ -52,6 +50,6 @@ export function createAudio() {
     footstep(position: Vector3) {noise(.18, .28, 200, position);},
     pause() {if (context?.state === 'running') void context.suspend();},
     reset() {voice.cancel(); for (const s of sources) s.stop(); sources.clear();},
-    dispose() {this.reset(); drone?.stop(); drone = null; if (context) void context.close(); context = null;},
+    dispose() {this.reset(); soundtrack.dispose(); if (context) void context.close(); context = null;},
   };
 }
