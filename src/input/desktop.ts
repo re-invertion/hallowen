@@ -13,11 +13,11 @@ export function createDesktop(camera: UniversalCamera, canvas: HTMLCanvasElement
   return {
     async enable() {enabled = true; await canvas.requestPointerLock();},
     disable() {enabled = false; keys.clear(); if (document.pointerLockElement) document.exitPointerLock();},
-    update(dt: number, speed: number, doorOpen: boolean) {
+    update(dt: number, speed: number, doorOpen: boolean, wardDoorOpen = false) {
       if (!enabled || document.pointerLockElement !== canvas) return;
       const f = camera.getForwardRay().direction;
       if (Math.hypot(f.x, f.z) > .01) forward = f;
-      camera.position.copyFrom(moveHorizontal(camera.position, forward, {x: Number(keys.has('KeyD')) - Number(keys.has('KeyA')), y: Number(keys.has('KeyS')) - Number(keys.has('KeyW'))}, speed, dt, doorOpen));
+      camera.position.copyFrom(moveHorizontal(camera.position, forward, {x: Number(keys.has('KeyD')) - Number(keys.has('KeyA')), y: Number(keys.has('KeyS')) - Number(keys.has('KeyW'))}, speed, dt, doorOpen, wardDoorOpen));
     },
     dispose() {window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('mousemove', mouse); window.removeEventListener('blur', blur); document.removeEventListener('pointerlockchange', unlock);},
   };
