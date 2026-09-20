@@ -23,6 +23,14 @@ npm.cmd run dev
 
 Otwórz http://127.0.0.1:5173 i wybierz „Podgląd na komputerze”. WASD: chodzenie; mysz: rozglądanie; E: interakcja; Esc: pauza. Kliknięcie „Wznów na komputerze” ponownie przechwytuje mysz. Klucz leży na biurku. Drzwi przy końcu pierwszego korytarza prowadzą do strefy technicznej; próba kończy się dopiero po przejściu jej do końca.
 
+## Dostęp przez HTTPS
+
+Repo zawiera workflow GitHub Pages. Po włączeniu **Settings → Pages → Source: GitHub Actions** build z gałęzi `main` publikuje aplikację pod adresem:
+
+`https://re-invertion.github.io/hallowen/`
+
+Build Pages używa bazowej ścieżki `/hallowen/`, więc dołączone nagrania i grafika intro działają również poza lokalnym adresem. HTTPS zapewnia bezpieczny kontekst wymagany przez WebXR.
+
 ## Quest 2 przez USB
 
 1. Włącz tryb deweloperski gogli. Podłącz kabel USB obsługujący dane i zaakceptuj debugowanie USB w goglach.

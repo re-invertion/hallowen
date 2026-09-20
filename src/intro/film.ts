@@ -16,7 +16,7 @@ export function createIntroFilm(scene: Scene, speak: (id: string) => void, knock
   const mat = new StandardMaterial('archive screen', scene); mat.disableLighting = true; mat.emissiveTexture = texture; mat.diffuseColor = Color3.Black(); mat.emissiveColor = Color3.Black(); mat.fogEnabled = false; screen.material = mat; screen.renderingGroupId = 2; screen.isPickable = false;
   const surround = MeshBuilder.CreateSphere('cinema darkness', {diameter: 20, segments: 8, sideOrientation: Mesh.BACKSIDE}, scene);
   const black = new StandardMaterial('cinema black', scene); black.disableLighting = true; black.emissiveColor = Color3.Black(); black.diffuseColor = Color3.Black(); surround.material = black; surround.renderingGroupId = 1; surround.isPickable = false;
-  const photo = new Image(); photo.src = '/media/archive-corridor.png';
+  const photo = new Image(); photo.src = `${import.meta.env.BASE_URL}media/archive-corridor.png`;
   let active = false, elapsed = 0, drawTime = -1;
   screen.setEnabled(false); surround.setEnabled(false);
   const draw = () => {
