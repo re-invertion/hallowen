@@ -7,10 +7,11 @@ Historia Oddziału Zero i program NACHTIGALL są fikcyjne. Projekt nie korzysta 
 ## Wstęp, grafika i dubbing
 
 - Wstęp trwa około 38 sekund: cztery animowane akta na kinowym ekranie wewnątrz VR, ilustracja archiwalna, polski lektor i trzy uderzenia. To animacja renderowana w grze, bez wymuszania ruchu głowy. Prawy spust lub spacja pomijają wstęp. Restart próby nie odtwarza go ponownie; powrót do menu i nowa gra odtwarzają całość.
-- Polski dubbing: 11 gotowych plików MP3 — narrator, radio, szept oraz kwestie dotyczące klucza i zakończenia. Kwestie oczekujące są odtwarzane kolejno. Reset i pominięcie wstępu anulują poprzednie nagrania. Podczas gry nie ma połączenia z usługą TTS.
+- Polski dubbing: 11 gotowych plików MP3 — narrator, radio, szept oraz kwestie dotyczące klucza i zakończenia. Runtime stosuje osobny miks dla materiału archiwalnego, radia i głosu przestrzennego, a muzyka automatycznie ścisza się pod dialogami. Kwestie oczekujące są odtwarzane kolejno. Reset i pominięcie wstępu anulują poprzednie nagrania.
 - Nowa sylwetka lekarza: modelowany fartuch, rękawy, dłonie z palcami, buty i gładka twarz. Korytarz ma faktury tynku, metalu, drewna i kafli, ramy drzwi, numery sal, uchwyty, szuflady i dokumenty.
 - Napisy na panelach są zwrócone czytelną stroną do gracza; orientację sprawdza test geometryczny.
-- Głos jest syntetyczny, a kadr archiwalny wygenerowany przez AI. Pochodzenie i pełny prompt: [public/media/PROVENANCE.md](public/media/PROVENANCE.md). Transkrypcja: [public/audio/transcript.json](public/audio/transcript.json). Skrypt regeneracji głosu wymaga osobno Pythona, edge-tts i FFmpeg; nie są potrzebne do uruchomienia gry.
+- Adaptacyjny soundtrack jest generowany lokalnie przez Web Audio API: niski drone podczas eksploracji, rosnący dysonans przy uderzeniach i puls/sub-bass podczas pościgu. Nie wymaga dodatkowych plików muzycznych ani połączenia sieciowego podczas gry.
+- Obecne źródłowe nagrania głosu są syntetyczne, a kadr archiwalny wygenerowany przez AI. Pochodzenie i pełny prompt: [public/media/PROVENANCE.md](public/media/PROVENANCE.md). Transkrypcja: [public/audio/transcript.json](public/audio/transcript.json). Same pliki MP3 można podmienić na nagrania z lepszego neural TTS lub głos aktorski bez zmiany kodu.
 
 ## Uruchomienie na komputerze
 
@@ -46,7 +47,7 @@ adb reverse --list
 4. Lewy drążek: chodzenie względem kierunku głowy; prawy drążek: płynny obrót. Prawy kontroler kieruje latarką. Wskaż klucz lub drzwi i naciśnij prawy spust w odległości do 1,5 m. Po otwarciu drzwi przejdź przez dalszą strefę techniczną — lekarz nadal może się zbliżać.
 5. Po zakończeniu wskaż panel ponowienia i naciśnij spust. Wyjście z sesji VR pauzuje próbę; ponowne wejście wznawia niedokończoną próbę.
 
-Test przez USB wymaga włączonego komputera i serwera, choć sama gra renderuje się w goglach. Docelowy hosting HTTPS umożliwi grę bez komputera; nie został jeszcze opublikowany.
+Test przez USB wymaga włączonego komputera i serwera, choć sama gra renderuje się w goglach. Opublikowana wersja HTTPS działa bez komputera pod adresem `https://re-invertion.github.io/hallowen/`.
 
 Gdy `adb devices` pokazuje `unauthorized`, zaakceptuj debugowanie w goglach. Brak urządzenia: sprawdź kabel danych i tryb deweloperski. Po ponownym podłączeniu może być potrzebne ponowienie `adb reverse`. Zwykły adres `http://192.168...` nie zapewnia bezpiecznego kontekstu WebXR.
 

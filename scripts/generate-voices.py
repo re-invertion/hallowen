@@ -1,8 +1,10 @@
 """Generate bundled Polish narration. Only run when replacing voice assets."""
 import asyncio
 import json
+import os
 import subprocess
 from pathlib import Path
+
 import edge_tts
 
 OUT = Path(__file__).resolve().parents[1] / 'public' / 'audio'
@@ -20,20 +22,39 @@ LINES = {
     'won': 'Myśleliśmy, że coś ci się stało. To naprawdę ty?',
 }
 
+NARRATOR = 'en-US-BrianMultilingualNeural'
+RADIO = 'pl-PL-ZofiaNeural'
+FORCE = os.environ.get('FORCE_REGENERATE') == '1'
+
+def role(name: str) -> tuple[str, str, str]:
+    if name.startswith('intro'):
+        return NARRATOR, '-8%', '-4Hz'
+    if name in ('whisper', 'lost'):
+        return NARRATOR, '-12%', '-7Hz'
+    return RADIO, '-2%', '+0Hz'
+
 async def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for name, text in LINES.items():
         filename = OUT / f'{name}.mp3'
-        if filename.exists() and filename.stat().st_size > 1000:
+        if not FORCE and filename.exists() and filename.stat().st_size > 1000:
             continue
-        narrator = name.startswith('intro') or name in ('whisper', 'lost')
-        await edge_tts.Communicate(text, 'pl-PL-MarekNeural', rate='-12%' if narrator else '+0%', pitch='-12Hz' if narrator else '+0Hz').save(str(filename))
-        if name.startswith('intro'):
-            raw = OUT.parent.parent / '.tools' / 'voice-originals' / filename.name
-            raw.parent.mkdir(parents=True, exist_ok=True)
-            raw.write_bytes(filename.read_bytes())
-            subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', str(raw), '-af', 'atempo=1.25,highpass=f=75,lowpass=f=6500', str(filename)], check=True)
-        print(name, filename.stat().st_size, flush=True)
+
+        voice, rate, pitch = role(name)
+        raw = OUT / f'.{name}.raw.mp3'
+        await edge_tts.Communicate(text, voice, rate=rate, pitch=pitch).save(str(raw))
+
+        # Keep the neural source natural. Runtime adds the in-world archive/radio colour.
+        subprocess.run([
+            'ffmpeg', '-hide_banner', '-loglevel', 'error', '-y',
+            '-i', str(raw),
+            '-af', 'highpass=f=60,lowpass=f=7600,loudnorm=I=-19:TP=-2:LRA=7',
+            '-codec:a', 'libmp3lame', '-q:a', '4',
+            str(filename),
+        ], check=True)
+        raw.unlink(missing_ok=True)
+        print(name, voice, filename.stat().st_size, flush=True)
+
     (OUT / 'transcript.json').write_text(json.dumps(LINES, ensure_ascii=False, indent=2), encoding='utf-8')
 
 asyncio.run(main())
