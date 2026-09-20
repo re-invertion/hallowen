@@ -53,14 +53,26 @@ try {
   await pose(0, 1.65, 20.5, 0, 1.65, 24);
   if (await page.evaluate(() => window.__oddzial.state().phase === 'won')) throw Error('First door ended the run before the service passage');
   await page.screenshot({path: 'test-results/service-passage.png'});
-  await pose(0, 1.65, 29.7, 0, 1.65, 30.5);
+  await pose(0, 1.65, 33, 0, 1.65, 38);
+  if (await page.evaluate(() => window.__oddzial.state().phase === 'won')) throw Error('Treatment ward ended the run before the second gate');
+  await page.screenshot({path: 'test-results/treatment-ward.png'});
+  await pose(0, 1.65, 46.4, 0, 1.65, 47.5);
+  await page.keyboard.press('KeyE');
+  if (await page.evaluate(() => window.__oddzial.state().wardDoorOpen)) throw Error('Ward door opened without the fuse');
+  await pose(-.15, 1.65, 38.7, -1.0, 1.02, 38.68);
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__oddzial.state().hasFuse);
+  await pose(0, 1.65, 46.4, 0, 1.65, 47.5);
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__oddzial.state().wardDoorOpen);
+  await pose(0, 1.65, 52.4, 0, 1.65, 53.5);
   await page.waitForFunction(() => window.__oddzial.state().phase === 'won');
   await page.waitForTimeout(500);
   await page.screenshot({path: 'test-results/win.png'});
   for (let i = 0; i < 5; i++) {
     await page.click('#restart');
     await page.waitForFunction(() => window.__oddzial.state().phase === 'explore');
-    if (await page.evaluate(() => window.__oddzial.state().hasKey || window.__oddzial.state().doorOpen)) throw Error('Restart retained inventory');
+    if (await page.evaluate(() => {const s = window.__oddzial.state(); return s.hasKey || s.doorOpen || s.hasFuse || s.wardDoorOpen;})) throw Error('Restart retained inventory');
     await pose(0, 1.65, 7.2, 0, 1.65, 10);
     await page.waitForFunction(() => window.__oddzial.state().phase === 'threat');
     const enemyZ = await page.evaluate(() => window.__oddzial.state().enemyZ);
@@ -68,6 +80,6 @@ try {
     await page.waitForFunction(() => window.__oddzial.state().phase === 'lost');
     await page.waitForTimeout(400);
   }
-  console.log(JSON.stringify({checks: 'menu, key gate, key pickup, service passage, escape, death, five resets', errors}));
+  console.log(JSON.stringify({checks: 'menu, key gate, key pickup, service passage, treatment ward, fuse gate, escape, death, five resets', errors}));
   if (errors.length) process.exitCode = 1;
 } catch (error) {console.error('Browser errors:', errors); throw error;} finally {await browser.close();}
