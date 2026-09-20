@@ -1,31 +1,39 @@
 import type {Phase} from './game/state';
 
-export type SoundtrackMood = {
+export type SoundtrackMix = {
   master: number;
-  drone: number;
-  air: number;
-  dissonance: number;
+  bed: number;
+  danger: number;
   pulse: number;
 };
 
-export function soundtrackMood(phase: Phase, hunted = false): SoundtrackMood {
-  if (phase === 'start') return {master: 0, drone: 0, air: 0, dissonance: 0, pulse: 0};
-  if (phase === 'intro') return {master: .24, drone: .11, air: .03, dissonance: .006, pulse: .002};
-  if (phase === 'explore') return {master: .22, drone: .1, air: .028, dissonance: .005, pulse: .004};
-  if (phase === 'knocking') return {master: .28, drone: .125, air: .038, dissonance: .014, pulse: .014};
+export function soundtrackMix(phase: Phase, hunted = false): SoundtrackMix {
+  if (phase === 'start') return {master: 0, bed: 0, danger: 0, pulse: 0};
+  if (phase === 'intro') return {master: .42, bed: .7, danger: .04, pulse: .015};
+  if (phase === 'explore') return {master: .48, bed: .78, danger: .06, pulse: .02};
+  if (phase === 'knocking') return {master: .56, bed: .64, danger: .34, pulse: .055};
   if (phase === 'threat') return hunted
-    ? {master: .34, drone: .15, air: .05, dissonance: .026, pulse: .03}
-    : {master: .3, drone: .14, air: .042, dissonance: .019, pulse: .018};
-  if (phase === 'lost') return {master: .3, drone: .14, air: .046, dissonance: .028, pulse: .02};
-  return {master: .14, drone: .055, air: .016, dissonance: .002, pulse: .002};
+    ? {master: .68, bed: .36, danger: .82, pulse: .11}
+    : {master: .6, bed: .48, danger: .62, pulse: .07};
+  if (phase === 'lost') return {master: .58, bed: .3, danger: .76, pulse: .08};
+  return {master: .28, bed: .42, danger: .08, pulse: .015};
 }
 
-export function createSoundtrack(context: () => AudioContext | null) {
-  let phase: Phase = 'start', hunted = false, ducked = false;
-  let master: GainNode | null = null, drone: GainNode | null = null, air: GainNode | null = null, dissonance: GainNode | null = null, pulse: GainNode | null = null, pulseDepth: GainNode | null = null;
+export function createSoundtrack(
+  context: () => AudioContext | null,
+  load: (name: string) => Promise<AudioBuffer>,
+) {
+  let phase: Phase = 'start', hunted = false, ducked = false, started = false;
+  let master: GainNode | null = null, bed: GainNode | null = null, danger: GainNode | null = null, pulse: GainNode | null = null;
   const running: AudioScheduledSourceNode[] = [];
+  let preloadPromise: Promise<[AudioBuffer, AudioBuffer]> | null = null;
 
-  function ramp(param: AudioParam, value: number, time = .35) {
+  const preload = () => preloadPromise ??= Promise.all([
+    load('abandoned-passages'),
+    load('lurking-evil'),
+  ]);
+
+  function ramp(param: AudioParam, value: number, time = .28) {
     const audio = context();
     if (!audio) return;
     param.cancelScheduledValues(audio.currentTime);
@@ -33,66 +41,84 @@ export function createSoundtrack(context: () => AudioContext | null) {
   }
 
   function apply() {
-    if (!master || !drone || !air || !dissonance || !pulse || !pulseDepth) return;
-    const mood = soundtrackMood(phase, hunted);
-    ramp(master.gain, mood.master * (ducked ? .38 : 1), ducked ? .08 : .45);
-    ramp(drone.gain, mood.drone);
-    ramp(air.gain, mood.air);
-    ramp(dissonance.gain, mood.dissonance);
-    ramp(pulse.gain, mood.pulse);
-    ramp(pulseDepth.gain, mood.pulse * .65);
+    if (!master || !bed || !danger || !pulse) return;
+    const mix = soundtrackMix(phase, hunted);
+    ramp(master.gain, mix.master * (ducked ? .24 : 1), ducked ? .06 : .32);
+    ramp(bed.gain, mix.bed);
+    ramp(danger.gain, mix.danger);
+    ramp(pulse.gain, mix.pulse);
   }
 
-  function start() {
+  async function start() {
     const audio = context();
-    if (!audio || master) return;
+    if (!audio || started) return;
+    started = true;
 
-    master = audio.createGain(); master.gain.value = 0; master.connect(audio.destination);
+    master = audio.createGain();
+    master.gain.value = 0;
 
-    const droneFilter = audio.createBiquadFilter(); droneFilter.type = 'lowpass'; droneFilter.frequency.value = 150; droneFilter.Q.value = .55;
-    drone = audio.createGain(); drone.gain.value = 0; drone.connect(droneFilter); droneFilter.connect(master);
+    const compressor = audio.createDynamicsCompressor();
+    compressor.threshold.value = -18;
+    compressor.knee.value = 18;
+    compressor.ratio.value = 4;
+    compressor.attack.value = .012;
+    compressor.release.value = .25;
+    master.connect(compressor);
+    compressor.connect(audio.destination);
 
-    for (const [frequency, level] of [[41.2, 1], [61.8, .48], [82.1, .22]] as const) {
-      const osc = audio.createOscillator(); osc.type = 'sine'; osc.frequency.value = frequency;
-      const gain = audio.createGain(); gain.gain.value = level;
-      osc.connect(gain); gain.connect(drone); osc.start(); running.push(osc);
-    }
+    bed = audio.createGain();
+    danger = audio.createGain();
+    pulse = audio.createGain();
+    bed.gain.value = danger.gain.value = pulse.gain.value = 0;
+    bed.connect(master);
+    danger.connect(master);
+    pulse.connect(master);
 
-    const seconds = 6;
-    const buffer = audio.createBuffer(1, Math.ceil(audio.sampleRate * seconds), audio.sampleRate);
-    const data = buffer.getChannelData(0); let brown = 0;
-    for (let i = 0; i < data.length; i++) {
-      brown = (brown + .025 * (Math.random() * 2 - 1)) / 1.025;
-      data[i] = brown * .55;
-    }
-    const noise = audio.createBufferSource(); noise.buffer = buffer; noise.loop = true;
-    const airFilter = audio.createBiquadFilter(); airFilter.type = 'bandpass'; airFilter.frequency.value = 720; airFilter.Q.value = .35;
-    air = audio.createGain(); air.gain.value = 0;
-    noise.connect(airFilter); airFilter.connect(air); air.connect(master); noise.start(); running.push(noise);
-
-    const metallic = audio.createOscillator(); metallic.type = 'triangle'; metallic.frequency.value = 147.4;
-    const metallicFilter = audio.createBiquadFilter(); metallicFilter.type = 'bandpass'; metallicFilter.frequency.value = 190; metallicFilter.Q.value = 2.2;
-    dissonance = audio.createGain(); dissonance.gain.value = 0;
-    metallic.connect(metallicFilter); metallicFilter.connect(dissonance); dissonance.connect(master); metallic.start(); running.push(metallic);
-
-    const pulseOsc = audio.createOscillator(); pulseOsc.type = 'sine'; pulseOsc.frequency.value = 54;
-    pulse = audio.createGain(); pulse.gain.value = 0; pulseOsc.connect(pulse); pulse.connect(master); pulseOsc.start(); running.push(pulseOsc);
-    const lfo = audio.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = .83;
-    pulseDepth = audio.createGain(); pulseDepth.gain.value = 0;
-    lfo.connect(pulseDepth); pulseDepth.connect(pulse.gain); lfo.start(); running.push(lfo);
+    // Audible fallback immediately, even if network decoding takes a moment.
+    const pulseOsc = audio.createOscillator();
+    pulseOsc.type = 'sine';
+    pulseOsc.frequency.value = 52;
+    pulseOsc.connect(pulse);
+    pulseOsc.start();
+    running.push(pulseOsc);
 
     apply();
+
+    try {
+      const [bedBuffer, dangerBuffer] = await preload();
+      if (!master || !bed || !danger) return;
+
+      const bedSource = audio.createBufferSource();
+      bedSource.buffer = bedBuffer;
+      bedSource.loop = true;
+      bedSource.connect(bed);
+      bedSource.start();
+      running.push(bedSource);
+
+      const dangerSource = audio.createBufferSource();
+      dangerSource.buffer = dangerBuffer;
+      dangerSource.loop = true;
+      dangerSource.connect(danger);
+      dangerSource.start();
+      running.push(dangerSource);
+    } catch {
+      // Keep the low pulse fallback; gameplay must continue if a music asset fails.
+    }
   }
 
   return {
+    preload,
     start,
     setMood(nextPhase: Phase, nextHunted = false) {
       if (phase === nextPhase && hunted === nextHunted) return;
-      phase = nextPhase; hunted = nextHunted; apply();
+      phase = nextPhase;
+      hunted = nextHunted;
+      apply();
     },
     duck(active: boolean) {
       if (ducked === active) return;
-      ducked = active; apply();
+      ducked = active;
+      apply();
     },
     dispose() {
       for (const source of running) {
@@ -100,8 +126,9 @@ export function createSoundtrack(context: () => AudioContext | null) {
         source.disconnect();
       }
       running.length = 0;
-      master?.disconnect(); master = null;
-      drone = air = dissonance = pulse = pulseDepth = null;
+      master?.disconnect();
+      master = bed = danger = pulse = null;
+      started = false;
     },
   };
 }
