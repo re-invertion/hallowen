@@ -19,6 +19,14 @@ describe('soundtrack mix', () => {
     expect(hunted.pulse).toBeGreaterThan(watched.pulse);
   });
 
+  it('crossfades to a distinct treatment ward layer', () => {
+    const corridor = soundtrackMix('threat', false, 'corridor');
+    const ward = soundtrackMix('threat', false, 'treatment');
+    expect(corridor.treatment).toBe(0);
+    expect(ward.treatment).toBeGreaterThan(.5);
+    expect(ward.bed).toBeLessThan(corridor.bed);
+  });
+
   it('backs off after escape', () => {
     expect(soundtrackMix('won').master).toBeLessThan(soundtrackMix('threat', true).master);
   });
