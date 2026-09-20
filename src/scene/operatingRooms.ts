@@ -3,8 +3,6 @@ import {MeshBuilder} from '@babylonjs/core/Meshes/meshBuilder';
 import {TransformNode} from '@babylonjs/core/Meshes/transformNode';
 import {StandardMaterial} from '@babylonjs/core/Materials/standardMaterial';
 import {Color3} from '@babylonjs/core/Maths/math.color';
-import {Vector3} from '@babylonjs/core/Maths/math.vector';
-import {PointLight} from '@babylonjs/core/Lights/pointLight';
 
 type AnimatedPatient = {
   root: TransformNode;
@@ -52,7 +50,7 @@ export function createOperatingRooms(scene: Scene) {
   dark.specularColor.set(0, 0, 0);
 
   const animated: AnimatedPatient[] = [];
-  const roomLights: Array<{light: PointLight; base: number; material: StandardMaterial; emissive: Color3}> = [];
+  const poweredLamps: Array<{material: StandardMaterial; emissive: Color3}> = [];
 
   const box = (name: string, w: number, h: number, d: number, x: number, y: number, z: number, mat: StandardMaterial) => {
     const mesh = MeshBuilder.CreateBox(name, {width: w, height: h, depth: d}, scene);
@@ -88,11 +86,7 @@ export function createOperatingRooms(scene: Scene) {
     lamp.rotation.z = Math.PI / 2;
     lamp.position.set(side * 1.32, 2.02, z - .28);
     lamp.material = lampMat;
-    const light = new PointLight('operating theatre light', new Vector3(side * 1.32, 1.8, z), scene);
-    light.diffuse = new Color3(.65, .68, .56);
-    light.range = 2.1;
-    light.intensity = .16;
-    roomLights.push({light, base: .16, material: lampMat, emissive: lampMat.emissiveColor.clone()});
+    poweredLamps.push({material: lampMat, emissive: lampMat.emissiveColor.clone()});
 
     // IV pole and tray silhouettes give the room readable surgical context.
     box('operating tray', .08, .055, .48, side * 1.33, .94, z + .54, metal);
@@ -151,10 +145,7 @@ export function createOperatingRooms(scene: Scene) {
       if (!Number.isFinite(dt) || dt <= 0) return;
       time += Math.min(dt, .05);
       const safePower = Math.max(0, Math.min(1, power));
-      for (const entry of roomLights) {
-        entry.light.intensity = entry.base * safePower;
-        entry.material.emissiveColor.copyFrom(entry.emissive.scale(safePower));
-      }
+      for (const entry of poweredLamps) entry.material.emissiveColor.copyFrom(entry.emissive.scale(safePower));
 
       for (const patient of animated) {
         const t = time + patient.phase;
@@ -176,10 +167,7 @@ export function createOperatingRooms(scene: Scene) {
         patient.root.rotation.set(0, 0, 0);
         patient.head.rotation.set(0, 0, 0);
       }
-      for (const entry of roomLights) {
-        entry.light.intensity = entry.base;
-        entry.material.emissiveColor.copyFrom(entry.emissive);
-      }
+      for (const entry of poweredLamps) entry.material.emissiveColor.copyFrom(entry.emissive);
     },
   };
 }
