@@ -9,7 +9,19 @@ page.on('console', m => {if (m.type() === 'error') errors.push(m.text());});
 
 try {
   await page.goto('http://127.0.0.1:5173', {waitUntil: 'networkidle'});
+  await page.waitForFunction(() => document.getElementById('status')?.textContent !== 'Ładowanie doświadczenia…', {timeout: 3000});
+  if (await page.locator('#desktop').isDisabled()) throw Error('Desktop preview is disabled during VR capability detection');
   await page.waitForFunction(() => window.__oddzial?.scene.isReady());
+  const doctorVisual = await page.evaluate(() => {
+    const names = window.__oddzial.scene.meshes.map(m => m.name);
+    return {
+      detailed: names.filter(name => name.startsWith('doctor ')).length,
+      hasFeaturelessHead: names.includes('doctor featureless head'),
+      hasBlur: names.includes('doctor face blur shell a') && names.includes('doctor face blur shell b'),
+      hasFacialFeatures: names.some(name => /doctor .*?(eye|nose|mouth)/i.test(name)),
+    };
+  });
+  if (doctorVisual.detailed < 40 || !doctorVisual.hasFeaturelessHead || !doctorVisual.hasBlur || doctorVisual.hasFacialFeatures) throw Error(`Doctor visual regression: ${JSON.stringify(doctorVisual)}`);
   await mkdir('test-results', {recursive: true});
   await page.screenshot({path: 'test-results/menu.png'});
 
@@ -115,7 +127,7 @@ try {
   }
 
   console.log(JSON.stringify({
-    checks: 'menu, old key location absent, open-cell visit, normal key pickup, key gate, service passage, treatment ward, fuse gate, escape, death, five resets',
+    checks: 'startup readiness, detailed faceless doctor, menu, old key location absent, open-cell visit, normal key pickup, key gate, service passage, treatment ward, fuse gate, escape, death, five resets',
     errors,
   }));
   if (errors.length) process.exitCode = 1;
