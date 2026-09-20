@@ -13,7 +13,7 @@ const runtime = createRuntime(el<HTMLCanvasElement>('game'), {
     if (!vr) {el('blackout').style.opacity = '1'; window.setTimeout(() => el('blackout').style.opacity = '0', 350);}
   },
   paused() {menu.hidden = false; hud.hidden = true; crosshair.hidden = true; resume = ['intro', 'explore', 'knocking', 'threat'].includes(runtime.getState().phase); el('desktop').textContent = resume ? 'Wznów na komputerze →' : 'Podgląd na komputerze →';},
-  status(s) {el('objective').textContent = s.phase === 'intro' ? 'Akta Oddziału Zero · Spacja: pomiń wstęp' : s.wardDoorOpen ? 'Rygiel otwarty. Dotrzyj do schodów.' : s.hasFuse ? 'Masz bezpiecznik. Otwórz awaryjny rygiel bloku zabiegowego.' : s.doorOpen ? 'Blok zabiegowy jest dalej. Znajdź bezpiecznik na wózku.' : s.hasKey ? 'Masz klucz. Otwórz przejście na końcu korytarza.' : 'Znajdź klucz na biurku. E / prawy spust: interakcja.';},
+  status(s) {el('objective').textContent = s.phase === 'intro' ? 'Akta Oddziału Zero · Spacja: pomiń wstęp' : s.wardDoorOpen ? 'Rygiel otwarty. Dotrzyj do schodów.' : s.hasFuse ? 'Masz bezpiecznik. Otwórz awaryjny rygiel bloku zabiegowego.' : s.doorOpen ? 'Blok zabiegowy jest dalej. Znajdź bezpiecznik na wózku.' : s.hasKey ? 'Masz klucz. Wróć do głównego przejścia i otwórz je.' : s.keyCellVisited ? 'Przeszukaj otwartą celę.' : 'Znajdź otwartą celę. E / prawy spust: interakcja.';},
   fps(text) {el('performance').textContent = text;},
 });
 function hideUI(vr = false) {menu.hidden = true; result.hidden = true; hud.hidden = vr; crosshair.hidden = vr;}
@@ -41,5 +41,4 @@ async function detectVR() {
   } catch {enter.disabled = true; status.textContent = 'Przeglądarka nie udostępniła VR. Uruchom podgląd komputerowy.';}
 }
 void detectVR();
-// Read-only diagnostics for browser verification; no game controls exposed.
 if (import.meta.env.DEV) Object.defineProperty(window, '__oddzial', {value: {state: runtime.getState, scene: runtime.scene}});

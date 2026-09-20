@@ -1,7 +1,9 @@
 import {Vector3} from '@babylonjs/core/Maths/math.vector';
 import {createVoicePlayer} from './voice';
 import {createSoundtrack, type SoundtrackZone} from './soundtrack';
+import {createRoomAmbience} from './audio/roomAmbience';
 import type {Phase} from './game/state';
+
 export function createAudio() {
   let context: AudioContext | null = null;
   const sources = new Set<AudioBufferSourceNode>();
@@ -14,6 +16,8 @@ export function createAudio() {
   const bufferFor = (id: string) => loadBuffer(`${id}.mp3`);
   const soundtrack = createSoundtrack(() => context, name => loadBuffer(`music/${name}.ogg`));
   const voice = createVoicePlayer(() => context, bufferFor, active => soundtrack.duck(active));
+  const ambience = createRoomAmbience(() => context);
+
   function noise(seconds: number, volume: number, frequency: number, position?: Vector3) {
     if (!context || context.state !== 'running') return;
     const audio = context;
@@ -32,6 +36,7 @@ export function createAudio() {
     } else gain.connect(audio.destination);
     sources.add(source); source.onended = () => {sources.delete(source); source.disconnect(); filter.disconnect(); gain.disconnect(); panner?.disconnect();}; source.start();
   }
+
   return {
     speak: voice.speak,
     async preload() {await Promise.all([soundtrack.preload(), ...['intro-1', 'intro-2', 'intro-3', 'intro-4', 'radio-start', 'radio-warning', 'whisper', 'key', 'locked', 'lost', 'won'].map(bufferFor)]);},
@@ -40,6 +45,8 @@ export function createAudio() {
       void soundtrack.start();
     },
     setMood(phase: Phase, hunted = false, zone: SoundtrackZone = 'corridor') {soundtrack.setMood(phase, hunted, zone);},
+    updateAmbience(dt: number, enabled: boolean) {ambience.update(dt, enabled);},
+    triggerKeyShock() {ambience.triggerKeyShock();},
     setListener(position: Vector3, forward: Vector3, up: Vector3) {
       if (!context) return;
       const l = context.listener;
@@ -50,7 +57,7 @@ export function createAudio() {
     knock(position: Vector3) {noise(.24, .75, 350, position);},
     footstep(position: Vector3) {noise(.18, .28, 200, position);},
     pause() {if (context?.state === 'running') void context.suspend();},
-    reset() {voice.cancel(); for (const s of sources) s.stop(); sources.clear();},
-    dispose() {this.reset(); soundtrack.dispose(); if (context) void context.close(); context = null;},
+    reset() {voice.cancel(); ambience.reset(); for (const s of sources) s.stop(); sources.clear();},
+    dispose() {this.reset(); ambience.dispose(); soundtrack.dispose(); if (context) void context.close(); context = null;},
   };
 }

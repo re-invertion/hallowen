@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {Vector3} from '@babylonjs/core/Maths/math.vector';
-import {moveHorizontal, rotationTranslation, BLOCKERS} from './locomotion';
+import {moveHorizontal, rotationTranslation, BLOCKERS, isInKeyCell} from './locomotion';
 
 describe('locomotion', () => {
   const p = new Vector3(0, 1.65, 4);
@@ -14,7 +14,7 @@ describe('locomotion', () => {
     expect(Vector3.Distance(a, p)).toBeCloseTo(.03);
     expect(moveHorizontal(p, f, {x: .1, y: .1}, 1.5, .02, false)).toEqual(p);
   });
-  it('blocks walls, desk and closed exit, allows open exit', () => {
+  it('blocks walls, desk and closed exits while allowing opened routes', () => {
     const f = new Vector3(0, 0, 1);
     expect(moveHorizontal(new Vector3(1.27, 1.65, 5), f, {x: 1, y: 0}, 1.5, .05, false).x).toBeLessThanOrEqual(1.28);
     expect(moveHorizontal(new Vector3(0, 1.65, 18.7), f, {x: 0, y: -1}, 1.5, .05, false).z).toBeLessThan(18.8);
@@ -26,6 +26,18 @@ describe('locomotion', () => {
     expect(BLOCKERS.length).toBeGreaterThan(0);
     const n = moveHorizontal(new Vector3(-.39, 1.65, 10), f, {x: -1, y: 0}, 1.5, .05, false);
     expect(n.x).toBeGreaterThan(-.43);
+  });
+  it('lets the player walk smoothly into the open key cell only at its doorway', () => {
+    const f = new Vector3(0, 0, 1);
+    let inside = new Vector3(-1.2, 1.65, 6);
+    for (let i = 0; i < 24; i++) inside = moveHorizontal(inside, f, {x: -1, y: 0}, 1.5, 1 / 72, false);
+    expect(inside.x).toBeLessThan(-1.5);
+    expect(isInKeyCell(inside)).toBe(true);
+
+    let sealed = new Vector3(-1.2, 1.65, 10);
+    for (let i = 0; i < 40; i++) sealed = moveHorizontal(sealed, f, {x: -1, y: 0}, 1.5, 1 / 72, false);
+    expect(sealed.x).toBeGreaterThanOrEqual(-1.28);
+    expect(isInKeyCell(sealed)).toBe(false);
   });
   it('keeps the head fixed when rotating an offset rig', () => {
     const offset = new Vector3(.6, 0, .3), yaw = Math.PI / 2;
