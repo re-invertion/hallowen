@@ -344,7 +344,7 @@ export function createCorridor(scene: Scene) {
     return plane;
   };
 
-  const exitSign = sign('exit label', 'PRZEJŚCIE / ZAMKNIĘTE', 0, 2.55, 18.84, 2.2, .35);
+  const exitSign = sign('exit label', 'PRZEJŚCIE / STREFA TECHNICZNA', 0, 2.55, 18.84, 2.2, .35);
   sign('warning', 'NIE ODWRACAJ SIĘ', 0, 2.5, .13, 2.4, .45).rotation.y = Math.PI;
   const serviceSign = sign('service zone', 'STREFA TECHNICZNA / -1', 0, 2.45, 20.35, 2.45, .34); faceTextToward(serviceSign, new Vector3(0, 2.45, 19));
   const treatmentSign = sign('treatment zone', 'BLOK ZABIEGOWY / 0', 0, 2.45, 31.35, 2.45, .34); faceTextToward(treatmentSign, new Vector3(0, 2.45, 30));
