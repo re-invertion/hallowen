@@ -25,8 +25,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install TTS
-        run: pip install edge-tts
+      - name: Install TTS and mastering tools
+        run: |
+          pip install edge-tts
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
       - name: Regenerate voices
         env:
